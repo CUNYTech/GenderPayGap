@@ -10,8 +10,10 @@
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-      <!-- Other links -->
+      <!-- Stylesheets -->
       <link rel="stylesheet" type="text/css" href="css/main.css">
+      <!-- Custom Fonts -->
+      <link href="https://fonts.googleapis.com/css?family=Lobster|Oxygen" rel="stylesheet">      
    </head>
    <body>
       <nav class="navbar navbar-default navbar-fixed-top">
@@ -23,14 +25,15 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
                </button>
-               <a class="navbar-brand">equalityscale.com</a>
+               <a class="navbar-brand" id="website-title">equalityscale.com</a>
             </div>
             <!-- Menu Items -->
             <div class="collapse navbar-collapse text-center" id="myNavBar">
-               <ul class="nav navbar-nav">
-                  <li><a href="#">Home</a></li>
-                  <li><a href="#">About</a></li>
-                  <button type="button" class="btn btn-default navbar-btn">Log In</button>
+               <ul class="nav navbar-nav navbar-right">
+                     <li><a href="#">Home</a></li>
+                     <li><a href="#">About</a></li>
+                     <button type="button" class="btn btn-default navbar-btn">Log In</button>
+                     <button type="button" class="btn btn-default navbar-btn">Sign Up</button>
                </ul>
             </div>
          </div>
@@ -40,15 +43,10 @@
             <img class="center-block" src="images/gender_symbol.jpg"> 
             <h1><strong>How does your salary<br>compare to other genders?<strong><h1>
          </div>
-         <div class="btn-group btn-group-justified" role="group" aria-lable="...">
-            <div class="btn-group" role="group">
-               <button type="button" class="btn btn-default btn-info">Learn More</button>
-            </div>
-         </div>
-         <div class="btn-group btn-group-justified" role="group" aria-lable="...">
-            <div class="btn-group" role="group">
-               <button type="button" class="btn btn-default btn-danger">Sign Up</button>
-            </div>
+         <!-- Two Buttons -->
+         <div class="home_buttons text-center">
+            <button type="button" class="btn btn-default btn-info">Learn More</button>
+            <button type="button" class="btn btn-default btn-danger">Sign Up</button>
          </div>
       </div>
       <h2 class="text-center">More Stuff... </h2>
