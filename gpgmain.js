@@ -22,9 +22,9 @@ app.use(function(request, response) {
     response.render('404', {layout: 'error'});
 });
 app.use(function(err, request, response, next) {
-    console.error(err.stack); response.type('text/plain');
+    console.error(err.stack);
     response.status(500);
-    response.render('500');
+    response.render('500', {layout: 'error'});
 });
 app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
