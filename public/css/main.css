@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css?family=Lobster|Oxygen');
+
+#page{
+   font-size: 12px;
+   font-family: Georgia, Verdana, Helvetica, Sans-Serif;
+   margin-left: 0; margin-right: 0;
+}
+.home {
+   background-color: #778899; /* slate grey */ 
+   position: relative; 
+   margin-top: 51px; 
+   color: snow;
+}
+#website-title {
+   font-family: 'Lobster', cursive; 
+   font-size: 160%; 
+}
+.home img {
+   width: 100%; 
+   opacity: 0.40; 
+   position: relative;
+}
+.home_buttons > button{
+   position: block; 
+   width: 100%;
+}
+#mainBody {
+    position: absolute;
+    top: 10%;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 99;
+    z-index: 1;
+}
+/* HOMEPAGE & ERROR PAGE */
+#homePage, #errorPage, #pgConfirm, #pgThanks {
+    font-family: 'Oxygen', sans-serif;
+    color: snow;
+    font-size: 3rem;
+    text-align: center;
+}
+#homePage h1 {
+    font-size: 4rem;
+    text-align: center;
+}
+#homePage p, {
+    text-align: center;
+}
+#hpEmail {
+    margin: 1% 0 0 21%;
+}
+#inEmail {
+    color: rgb(0,0,0);
+}
+#btnEmail {
+    display: block;
+    color: rgb(0,191,255);
+    border: 4px ridge rgb(65,105,225);
+    background-color: rgb(0,0,128);
+    margin: 2% 0 0 31%;
+}
+/* CONFIRM (FORM) PAGE */
+#pgConfirm {
+    font-size: 2rem;
+    text-align: left;
+}
+#pgConfirm h1 {
+    font-size: 3rem;
+    text-align: center;
+}
+#pgConfirm p {
+    text-align: center;
+}
+#cnForm {
+    width: 60%;
+    margin: 1% auto;
+    padding: 1% 5%;
+    background-color: rgba(0,191,255,.7);
+    border-radius: 45px;
+    border: 4px groove rgb(65,105,225);
+}
+#formMain {
+    color: black;
+}
+.fmGp {
+    display: inline-table;
+    width: 90%;
+    margin: 1% auto;
+}
+.fmLbl, .fmInp {
+    display: inline-block;
+} 
+.fmLbl {
+    width: 39%; 
+}
+/* Thanks PAGE */
+#pgThanks {
+    
+}
+#sampleEmail {
+    width: 50%;
+    margin: 1% auto;
+    background-color: rgba(224,255,255,.8);
+    border: 3px ridge rgb(0,0,139);
+    border-radius: 0 40px;
+    color: blueviolet;
+    padding: 1% 3%;
+    font-size: 2rem;
+    text-align: left;
+}
+/* ERROR PAGE */
+#errorPage {
+    text-align: center;
+}
+.errorTxt {
+    color: crimson;
+    font-weight: 800;
+}
+
+/* This is for the tablet viewports and bigger resolutions */
+@media(min-width: 768px){
+   .navbar-nav > button {
+      margin-right: 10px;
+      margin-left: 10px;
+   } 
+
+   #homePage h1 {
+      font-size: 4rem;
+   }
+
+   .home_buttons {
+      background-color: #151515;
+      padding: 10px;
+   }
+
+   .home_buttons > button {
+      display: inline-block;
+      width: 30%;
+      padding: 15px;
+      margin-left: 60px;
+      margin-right: 60px;
+   }
+}
