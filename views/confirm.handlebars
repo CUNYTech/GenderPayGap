@@ -1,3 +1,6 @@
+<head>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+</head>
 <article id="pgConfirm">
     <h1>Welcome! Your email has been confirmed</h1>
     <p>Let us know about a work experience. Required fields are marked with an asterisk*</p>
@@ -12,9 +15,9 @@
             <div class="fmGp">
                 <div class="fmLbl">Your name:</div>
                 <div class="fmInp">
-                    <input id="inName" name="inName" type="text" size="25" autofocus >
+                    <input id="inName" name="inName" type="text" size="25" autofocus>
                 </div>
-            </div>    
+            </div>
             <div class="fmGp">
                 <div class="fmLbl">Your age*:</div>
                 <div class="fmInp">
@@ -23,7 +26,7 @@
                         {{#each params.getRngAge}}              {{! interesting you don't reference these by the method, just the name }}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="fmGp">
@@ -34,7 +37,7 @@
                         {{#each params.getRngGender}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="fmGp">
@@ -51,7 +54,7 @@
                         {{#each params.getRngStates}}
                             <option value="{{@key}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="fmGp">
@@ -62,7 +65,7 @@
                         {{#each params.getRngDuration}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="fmGp">
@@ -73,7 +76,7 @@
                         {{#each params.getRngSalary}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="fmGp">
@@ -84,10 +87,26 @@
                         {{#each params.getRngEthnic}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
+            <div class="g-recaptcha" data-sitekey="6Le8sBcUAAAAAALeP4Y-6e2hp35USWC0MUM9TUcy"></div>
             <button id="btnEmail" type="submit">Submit</button>
         </form>
+        <script>
+            $(document).ready(function() {
+                $('#formMain').submit(function() {
+                    $(this).ajaxSubmit({
+                        error: function(xhr) {
+                            status("Error: " + xhr.status);
+                        },
+                        success: function(response) {
+                            console.log(response);
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
     </section>
 </article>
