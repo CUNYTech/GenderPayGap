@@ -18,7 +18,7 @@ app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(request, response) {
-   response.render('home', {pgTitle: params.getPgTitle['home'] });
+   response.render('home', {pgTitle: params.getPgTitle('home') });
 });
 app.post('/', function(request, response) {
     var inpEmail = request.body.inpEmail;                       // add server-side verification
@@ -30,7 +30,7 @@ app.post('/', function(request, response) {
     response.redirect(303, '/thanks');
 });
 app.get('/thanks', function(request, response) {
-    response.render('thanks', {pgTitle: params.getPgTitle['thanks'], 
+    response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
                                inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
                                 }); 
 });
@@ -38,11 +38,11 @@ app.get('/confirm', function(request, response) {
     inpEmail = request.query.inpEmail;                // add verification that db has confirmed db num and email exist.
                                                       //  if db can't confirm number, redirect to redirect page    
     request.session.conEmail = inpEmail;              //  this will change to db generated email address once confirmed
-    response.render('confirm', {pgTitle: params.getPgTitle['confirm'] });
+    response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
     // how to do a time-delayed redirect to the dosurvey page
 });
 app.get('/dosurvey', function(request, response) {          // add referrer page restriction to disable back button
-    response.render('dosurvey', {pgTitle: params.getPgTitle['dosurvey'], 
+    response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
                                 conEmail: request.session.conEmail,             
                                 params: params /*,
                                 inpForm: request.session.inpForm,    //params for validation failure
@@ -76,7 +76,7 @@ app.get('/shosurvey', function(request, response) {      // add referrer page ve
         response.redirect(303, '/');
     }
     var resDisp = params.getResDisp(request.session.proForm);
-    response.render('shosurvey', {pgTitle: params.getPgTitle['shosurvey'],
+    response.render('shosurvey', {pgTitle: params.getPgTitle('shosurvey'),
                                   resDisp: resDisp });
 });
 
