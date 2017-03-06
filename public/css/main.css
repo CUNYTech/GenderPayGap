@@ -34,7 +34,7 @@
     z-index: 1;
 }
 /* HOMEPAGE & ERROR PAGE */
-#homePage, #errorPage, #pgConfirm, #pgThanks {
+#homePage, #errorPage, #pgConfirm, #pgThanks, #pgDisplay {
     font-family: 'Oxygen', sans-serif;
     color: snow;
     font-size: 3rem;
@@ -48,9 +48,9 @@
     text-align: center;
 }
 #hpEmail {
-    margin: 1% 0 0 21%;
+    margin: 1% 0 0 10%;
 }
-#inEmail {
+#inpEmail {
     color: rgb(0,0,0);
 }
 #btnEmail {
@@ -72,7 +72,7 @@
 #pgConfirm p {
     text-align: center;
 }
-#cnForm {
+#cnForm, #respDispSec {
     width: 60%;
     margin: 1% auto;
     padding: 1% 5%;
@@ -94,7 +94,7 @@
 .fmLbl {
     width: 39%; 
 }
-/* Thanks PAGE */
+/* THANKS PAGE */
 #pgThanks {
     
 }
@@ -116,6 +116,21 @@
 .errorTxt {
     color: crimson;
     font-weight: 800;
+}
+/* ******************** SHOW DISPLAY PAGE *********************/
+#pgDisplay {
+    font-size: 1.5rem;
+    text-align: left
+}
+.resDispRw {
+    width: 90%;
+    margin: 1% auto;
+}
+.resDispLdCl, .resDispCl {
+    display: inline-block
+}
+.resDispLdCl {
+    width: 45%;
 }
 
 /* This is for the tablet viewports and bigger resolutions */
