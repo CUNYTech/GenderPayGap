@@ -60,7 +60,7 @@
     background-color: rgb(0,0,128);
     margin: 2% 0 0 31%;
 }
-/* CONFIRM (FORM) PAGE */
+/* CONFIRM and DOSURVEY (FORM) PAGE */
 #pgConfirm {
     font-size: 2rem;
     text-align: left;
@@ -83,8 +83,7 @@
 #formMain {
     color: black;
 }
-.fmGp {
-    display: inline-table;
+.frmRw {
     width: 90%;
     margin: 1% auto;
 }
