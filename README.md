@@ -4,3 +4,5 @@ If ever at all you need to take everything down and reset your project by placin
 1.) npm install express
 2.) npm install express3-handlebars
 3.) npm install body-parser
+4.) node gpgmain.js
+5.) localhost:3000
