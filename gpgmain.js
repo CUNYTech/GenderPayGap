@@ -22,7 +22,7 @@ app.get('/', function(request, response) {
 });
 app.post('/', function(request, response) {
     var inpEmail = request.body.inpEmail;                       // add server-side verification
-    // add db verification and add email to emailpending collection
+    // BILLY! take inpEmail test to see if in db, if not, create new record with email, get id number
     // redirect to different page if email is in db already
     // var dbENum = [pending email collection id num];                                                
     // request.session.dbENum = dbENum; 
@@ -35,40 +35,40 @@ app.get('/thanks', function(request, response) {
                                 }); 
 });
 app.get('/confirm', function(request, response) {
-    inpEmail = request.query.inpEmail;                // add verification that db has confirmed db num and email exist.
+    inpEmail = request.query.inpEmail;                // BILLY! take inpEmail, check against db num and email exist.
                                                       //  if db can't confirm number, redirect to redirect page    
     request.session.conEmail = inpEmail;              //  this will change to db generated email address once confirmed
     response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
     // how to do a time-delayed redirect to the dosurvey page
 });
-app.get('/dosurvey', function(request, response) {          // add referrer page restriction to disable back button
+app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
     response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
                                 conEmail: request.session.conEmail,             
-                                params: params /*,
-                                inpForm: request.session.inpForm,    //params for validation failure
-                                alarm: (!request.session.passThru) */ });
+                                params: params,
+                                inpForm: (request.session.inpForm) ? inpForm : false,    //params for validation failure
+                                alarm: (request.session.alarm) ? alarm : false });
 });
-app.post('/prosurvey', function(request, response) {
+app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page
     var passThru = true;
     var inpForm = {
         email: request.session.inpEmail
     };
     for (var i = 0; i < params.getReqFieldLen(); i++) {
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
-        passThru = (request.body[params.getReqField(i)] != "");                         // add more verification
+        passThru = (request.body[params.getReqField(i)] != "");                    // if required fields are empty, do not passThru
     }
     if (!passThru) {
         request.session.inpForm = inpForm;
-        request.session.passThru = passThru;
+        request.session.alarm = true;
         return response.redirect(303, '/dosurvey');
     }
     for (var i = 0; i < params.getNonReqFieldLen(); i++) {
         inpForm[params.getNonReqField(i)] = request.body[params.getNonReqField(i)];
     }
-                                                        // add- filter scrub form data for special characters
-                                                        // add form data to db here
+                                                        // Fred - add filter for special characters for username, employer fields
+                                                        // BILLY!  take inpform obj to add form data to db here
     request.session.proForm = inpForm;
-    if (request.session.passThru) delete request.sesion.passThru;
+    if (request.session.alarm) delete request.sesion.alarm;
     response.redirect(303, '/shosurvey');
 });
 app.get('/shosurvey', function(request, response) {      // add referrer page verification before entering page.
