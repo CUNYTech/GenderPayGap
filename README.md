@@ -1,8 +1,13 @@
-# GenderPayGap is a tool used to compare salaries of different genders with the same level of expertise and experience.
+GenderPayGap
+============
 
-If ever at all you need to take everything down and reset your project by placing it into a new directory. Re-install the packages by doing:
-1.) npm install express
-2.) npm install express3-handlebars
-3.) npm install body-parser
-4.) node gpgmain.js
-5.) localhost:3000
+## This web application will be used to compare salaries of different genders with the same level of expertise and experience.
+
+### Install these packages to allow the project to run properly:  
+1. ` npm install express`
+2.  `npm install express3-handlebars`
+3.  `npm install body-parser`
+
+After, you should do `node gpgmain.js` to have Node execute our JS file. Then you
+should open up your preferential web browser and type in: `localhost:3000` to run
+the web app locally.
