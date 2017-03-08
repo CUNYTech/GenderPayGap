@@ -58,7 +58,7 @@ app.post('/', function(request, response) {
             if (email already in db) {
                 response.redirect(303, '/returnuser');
             }  
-        we can then deal with existing emails later (i haven't created the /email check page yet so don't add to code yet). 
+        we can then deal with existing emails later. 
         var dbEnum = [id of email];
         request.session.dbENum = dbENum; 
     */
