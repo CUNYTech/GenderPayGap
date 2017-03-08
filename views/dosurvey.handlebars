@@ -1,0 +1,93 @@
+<article id="pgConfirm">
+    <h1>Please fill out our brief questionnaire.</h1>
+    <p>Let us know about you and a work experience. Required fields are marked with an asterisk*</p>
+    <section id="cnForm">
+        <form id="formMain" action="/prosurvey" method="post">
+            <div class="frmRw">
+                <div class="fmLbl">email:</div>
+                <div class="fmInp">
+                    {{conEmail}}
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Your age*:</div>
+                <div class="fmInp">
+                    <select id="ageRange" name="ageRange" required>
+                        <option value="">(select)</option>
+                        {{#each params.getAgeRange}}              {{! interesting you don't reference these by the method, just the name }}
+                            <option value="{{@index}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Your gender*:</div>
+                <div class="fmInp">
+                    <select id="gender" name="gender">
+                        <option value="">(select)</option>
+                        {{#each params.getGender}}
+                            <option value="{{@index}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Employer name*:</div>
+                <div class="fmInp">
+                    <input id="employer" name="employer" type="text" size="25">
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Business Location:</div>
+                <div class="fmInp">
+                    <select id="empState" name="empState">
+                        <option value="">(select)</option>
+                        {{#each params.getEmpState}}
+                            <option value="{{@key}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Work Duration*:</div>
+                <div class="fmInp">
+                    <select id="empDuration" name="empDuration">
+                        <option value="">(select)</option>
+                        {{#each params.getEmpDuration}}
+                            <option value="{{@index}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Salary Range*:</div>
+                <div class="fmInp">
+                    <select id="empSalary" name="empSalary">
+                        <option value="">(select)</option>
+                        {{#each params.getEmpSalary}}
+                            <option value="{{@index}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <div class="frmRw">
+                <div class="fmLbl">Your name:</div>
+                <div class="fmInp">
+                    <input id="userName" name="userName" type="text" size="25" autofocus >
+                </div>
+            </div>    
+            <div class="frmRw">
+                <div class="fmLbl">Your race/ethnicity:</div>
+                <div class="fmInp">
+                    <select id="ethnicity" name="ethnicity">
+                        <option value="">(decline)</option>
+                        {{#each params.getEthnicity}}
+                            <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>        
+                </div>
+            </div>
+            <button id="btnEmail" type="submit">Submit</button>
+        </form>
+    </section>
+</article>
