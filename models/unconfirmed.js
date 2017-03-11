@@ -8,7 +8,7 @@ var schema = {
     confirmed: {
         type: Boolean,
         default: false
-    }
+    },
     userEmail: 'String',
 };
 
