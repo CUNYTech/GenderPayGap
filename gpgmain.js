@@ -7,9 +7,25 @@ app.use(require('body-parser')());
 var credentials = require('./credentials.js');      // remember to set your credentials.js file 
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
+var mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+var opts = {
+    server: {
+        socketOptions: { keepAlive: 1 }
+    }
+};
+switch(app.get('env')) {
+    case 'development': 
+        mongoose.connect(credentials.mongo.development.connectionString, opts);
+        break;
+    case 'production':
+        mongoose.connect(credentials.mongo.production.connectionString, opts);
+        break;
+    default:
+        throw new Error('Unknown execution environment: ' + app.get('env'));
+};
+var Unconfirmed = require('./models/unconfirmed.js');
 
-var MongoClient = require('mongodb').MongoClient, assert = require('assert');
-var url = credentials.mongoUrl;
 
 var params = require('./lib/gpgParams.js');
 app.set('port', process.env.PORT || 3000);
@@ -51,46 +67,24 @@ app.post('/', function(request, response) {
     });
     //end Nicholas captcha code */
 
-    var inpEmail = request.body.inpEmail;                       // FRED - add server-side email verification
+    var inpEmail = request.body.inpEmail.trim();                       // FRED - add server-side email verification
+    if (inpEmail === "") return response.redirect(303, '/');
+    request.session.inpEmail = inpEmail;
     
-    /* BILLY - take inpEmail, do a find, if doesn't exist, create new record with email, then find email, get id number
-        if email is found, redirect to different page
-            if (email already in db) {
-                response.redirect(303, '/returnuser');
-            }  
-        we can then deal with existing emails later. 
-        var dbEnum = [id of email];
-        request.session.dbENum = dbENum; 
-    */
-    var insertDocuments = function(db, callback){
-		//Get the documents collection
-		var collection = db.collection('documents');
-		//Insert some documents
-		collection.insert( {email: inpEmail, confirmed: false}, function(err, result) { // creates new record
-            collection.find({email: inpEmail}).toArray(function(err, info) {          // finds record just created, sends to array info
-                console.log(info[0]);                        // you can see here that it outputs the id but try getting it!
-                assert.equal(err, null);
-                assert.equal(1, result.result.n);
-                assert.equal(1, result.ops.length);
-                callback(result); 
-            });
-		});
-	};
-	// Use connect method to connect to the server
-	MongoClient.connect(url, function(err, db){
-		assert.equal(null, err);
-		console.log("Connected successfully to the server");
-		insertDocuments(db, function(){
-			//var collection = db.collection('documents');
-			//collection.remove();
-            db.close();
-		}); 
-	});
-    // End Billy mongo code
-    request.session.inpEmail = inpEmail;                       
-    response.redirect(303, '/thanks');
+    Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, unconfirmed) {
+        if (unconfirmeds) {
+            console.log(unconfirmed);
+            return response.redirect(303, '/returnuser');
+        }
+        new Unconfirmed({
+            userEmail: inpEmail
+        }).save();
+        response.redirect(303, '/thanks');
+    });
 });
 app.get('/thanks', function(request, response) {
+    if (!request.session.inpEmail) return response.redirect(303, '/');
+    
     response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
                                inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
     }); 
@@ -159,3 +153,18 @@ app.use(function(err, request, response, next) {         // this for program/db 
 app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
 });
+
+/*
+    Unconfirmed.find(function(err, unconfirmeds) {
+       var unconfList = {
+           unconfirmeds: unconfirmeds.map(function(unconfirmed) {
+               return {
+                   id: unconfirmed._id,
+                   userEmail: unconfirmed.userEmail,
+                   sendDate: unconfirmed.sendDate,
+               }
+           })
+        };
+        console.log(unconfirmeds);
+    });
+    */
