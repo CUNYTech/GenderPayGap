@@ -21,7 +21,7 @@ app.get('/', function(request, response) {
                             addCaptcha: true });
 });
 app.post('/', function(request, response) {
-    // Nicholas captcha code 
+ /*   // Nicholas captcha code 
     if (request.body['g-recaptcha-response'] === undefined ||
         request.body['g-recaptcha-response'] === '' ||
         request.body['g-recaptcha-response'] === null) {
@@ -49,7 +49,7 @@ app.post('/', function(request, response) {
         "responseCode": 0,
         "responseDesc": "Success"
     });
-    //end Nicholas captcha code
+    //end Nicholas captcha code */
 
     var inpEmail = request.body.inpEmail;                       // FRED - add server-side email verification
     
@@ -58,7 +58,7 @@ app.post('/', function(request, response) {
             if (email already in db) {
                 response.redirect(303, '/returnuser');
             }  
-        we can then deal with existing emails later (i haven't created the /email check page yet so don't add to code yet). 
+        we can then deal with existing emails later. 
         var dbEnum = [id of email];
         request.session.dbENum = dbENum; 
     */
