@@ -67,12 +67,12 @@ app.post('/', function(request, response) {
     });
     //end Nicholas captcha code */
 
-    var inpEmail = request.body.inpEmail.trim();                       // FRED - add server-side email verification
+    var inpEmail = request.body.inpEmail.trim();       // FRED - add server-side email verification
     if (inpEmail === "") return response.redirect(303, '/');
     request.session.inpEmail = inpEmail;
     
     Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, unconfirmed) {
-        if (unconfirmeds) {
+        if (unconfirmed) {
             console.log(unconfirmed);
             return response.redirect(303, '/returnuser');
         }
@@ -84,7 +84,12 @@ app.post('/', function(request, response) {
 });
 app.get('/thanks', function(request, response) {
     if (!request.session.inpEmail) return response.redirect(303, '/');
-    
+    Unconfirmed.findOne({userEmail: request.session.inpEmail}, '_id', function(err, unconfirmed) {
+        if (!unconfirmed) {
+            return response.redirect(303, '/');
+        }
+        console.log(unconfirmed);
+    });
     response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
                                inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
     }); 
