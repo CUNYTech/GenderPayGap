@@ -88,11 +88,12 @@ app.get('/thanks', function(request, response) {
         if (!unconfirmed) {
             return response.redirect(303, '/');
         }
-        console.log(unconfirmed);
+        console.log(unconfirmed._id);
+        response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
+                                   inpEmail: request.session.inpEmail, 
+                                   dbENum: unconfirmed._id
+        }); 
     });
-    response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
-                               inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
-    }); 
 });
 app.get('/returnuser', function(request, response) {
     response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
