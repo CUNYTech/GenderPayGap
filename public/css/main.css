@@ -58,7 +58,10 @@
     color: rgb(0,191,255);
     border: 4px ridge rgb(65,105,225);
     background-color: rgb(0,0,128);
-    margin: 2% 0 0 31%;
+    margin: 2% 0 0 38%;
+}
+#capFrnt {
+    margin: 3% 0 0 30%;
 }
 /* CONFIRM and DOSURVEY (FORM) PAGE */
 #pgConfirm {
