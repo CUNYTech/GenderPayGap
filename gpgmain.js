@@ -73,7 +73,6 @@ app.post('/', function(request, response) {
     
     Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, unconfirmed) {
         if (unconfirmed) {
-            console.log(unconfirmed);
             return response.redirect(303, '/returnuser');
         }
         new Unconfirmed({
@@ -88,7 +87,6 @@ app.get('/thanks', function(request, response) {
         if (!unconfirmed) {
             return response.redirect(303, '/');
         }
-        console.log(unconfirmed._id);
         response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
                                    inpEmail: request.session.inpEmail, 
                                    dbENum: unconfirmed._id
@@ -114,7 +112,7 @@ app.get('/confirm', function(request, response) {
             if (err) throw err;
             console.log(dbEmail);
         })
-        response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
+        return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
         // how to do a time-delayed redirect to the dosurvey page
     });
 });
@@ -125,6 +123,7 @@ app.get('/returnuser', function(request, response) {
 });
 
 app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
+    
     response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
                                 conEmail: request.session.conEmail,             
                                 params: params,
@@ -177,17 +176,3 @@ app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
 });
 
-/*
-    Unconfirmed.find(function(err, unconfirmeds) {
-       var unconfList = {
-           unconfirmeds: unconfirmeds.map(function(unconfirmed) {
-               return {
-                   id: unconfirmed._id,
-                   userEmail: unconfirmed.userEmail,
-                   sendDate: unconfirmed.sendDate,
-               }
-           })
-        };
-        console.log(unconfirmeds);
-    });
-    */
