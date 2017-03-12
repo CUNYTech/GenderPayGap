@@ -95,18 +95,35 @@ app.get('/thanks', function(request, response) {
         }); 
     });
 });
+app.get('/confirm', function(request, response) {
+    var unconfE;
+    if (request.query.unconfE)
+        unconfE = request.query.unconfE;
+    else    
+        return response.redirect(303, '/');
+    Unconfirmed.findById(unconfE, function(err, dbEmail) {
+        if (err) console.log(err);
+        if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
+        if (dbEmail.confirmed) {
+            request.session.confE = unconfE;
+            return response.redirect(303, '/returnuser');
+        }
+        request.session.surveyE = unconfE;
+        dbEmail.confirmed = true;
+        dbEmail.save(function(err) {
+            if (err) throw err;
+            console.log(dbEmail);
+        })
+        response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
+        // how to do a time-delayed redirect to the dosurvey page
+    });
+});
 app.get('/returnuser', function(request, response) {
     response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
                                inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
     }); 
 });
-app.get('/confirm', function(request, response) {
-    inpEmail = request.query.inpEmail;                // BILLY! take inpEmail, check against db num and email exist.
-                                                      //  FRED - if db can't confirm number, redirect to redirect page    
-    request.session.conEmail = inpEmail;              //  this variable will change to db generated email address once confirmed
-    response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
-    // how to do a time-delayed redirect to the dosurvey page
-});
+
 app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
     response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
                                 conEmail: request.session.conEmail,             
