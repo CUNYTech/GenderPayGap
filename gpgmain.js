@@ -1,5 +1,5 @@
 /* Fred - take email submit and captcha out of home.handlebars and make a it partial to be inserted in home and email resubmit page,
-    also create an email resubmit page (for people who don't confirm email right away but email is in our db) */
+    also create an email resubmit page (for people who don't confirm email right away but email is in our db), set up and error page*/
 
 var express = require('express');
 var app = express();
@@ -78,7 +78,7 @@ app.post('/', function(request, response) {
     Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
         if (user) {                                                 // if email exists already, do not re-save
             if (!user.confirmed)                                    // if email exists but is not confirmed
-                return response.redirect(303, '/returnuser');       // change to resubmit page (once it's created)
+                return response.redirect(303, '/returnuser');       // redirect to resubmit page (once it's created)
             else 
                 return response.redirect(303, '/returnuser');      // if email exists and confirmed, redirect to returnuser
         }
@@ -101,18 +101,18 @@ app.get('/thanks', function(request, response) {
         }); 
     });
 });
-app.get('/confirm', function(request, response) {
+app.get('/confirm', function(request, response) {   // Fred - add referrer page restriction to disable back button
     var unconfE;
     if (request.query.unconfE)
         unconfE = request.query.unconfE;                    // id comes from GET request, if not, redirect to home page
     else    
-        return response.redirect(303, '/');
+        return response.redirect(303, '/');                    //FRED - create error page fo
     
     Unconfirmed.findById(unconfE, function(err, dbEmail) {
-        if (err) console.log(err);
-                                                // if there is no record, or the record has no email addres, reject, send home
+        if (err) throw (err);
+                                                // if there is no record, or the record has no email address, reject, send home
         if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
-        if (dbEmail.confirmed) {                        // if id is unconfirmed, send to returnuser to resubmit page (create it)
+        if (dbEmail.confirmed) {                        // if id is unconfirmed, send to resubmit page (create it)
             request.session.confE = unconfE;           
             return response.redirect(303, '/returnuser');   // change to resubmit page (once created)
         }
@@ -128,6 +128,7 @@ app.get('/confirm', function(request, response) {
             if (err) throw err;
             Confirmed.findOne({email: dbEmail.userEmail}, '_id', function(err, user) {      //THIS SHOULD BE A PROMISE!!!!! 
                 if (err) throw err;
+                console.log(user._id);
                 request.session.surveyId = user._id;       // this is the new id number in Confirmed, add to session mem for dosurvey 
                 delete request.session.unconfE;
                 delete request.session.inpEmail;
@@ -137,21 +138,33 @@ app.get('/confirm', function(request, response) {
         });
     });
 });
-app.get('/returnuser', function(request, response) {                     // this page for emails confirmed, check if survey completed
+app.get('/returnuser', function(request, response) {                // this page for emails already confirmed, check if survey completed
     response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
                                    inpEmail: request.session.inpEmail          
     }); 
 });
 
 app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
-    response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
-                                conEmail: request.session.conEmail,             
-                                params: params,
-                                inpForm: (request.session.inpForm) ? inpForm : false,    //params for if SS validation sees a problem
-                                alarm: (request.session.alarm) ? alarm : false });  // this is for error code - serverside validation
+    var surveyId;
+    if (request.session.surveyId)
+        surveyId = request.session.surveyId;
+    else 
+        return response.redirect(303, '/');
+    console.log(surveyId);
+    Confirmed.findById(surveyId, function(err, user) {
+        if (err) console.log(err);
+                                                    // if there is no record, or the record has no email address, reject, send home
+        if (!user || !user.email) return response.redirect(303, '/');
+        response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
+                                     conEmail: user.email,             
+                                     params: params,
+                                     inpForm: (request.session.inpForm) ? inpForm : false,  //params for if SS validation sees a problem
+                                     alarm: (request.session.alarm) ? alarm : false   // this is for error code - serverside validation  
+        });                                                    
+    });
 });
-app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page
-    var passThru = true;
+app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page - 
+    var passThru = true;                                    //FRED - add server-side verification
     var inpForm = {
         email: request.session.inpEmail
     };
@@ -169,7 +182,7 @@ app.post('/prosurvey', function(request, response) {        //this function proc
     }
                                                         // Fred - add filter for special characters for username, employer fields
                                                         //  add form data to db here 
-    request.session.proForm = inpForm;
+    request.session.dispForm = inpForm;
     if (request.session.alarm) delete request.sesion.alarm;
     response.redirect(303, '/shosurvey');
 });
@@ -177,9 +190,9 @@ app.get('/shosurvey', function(request, response) {      // add referrer page ve
     if (!request.session.proForm) {
         response.redirect(303, '/');
     }
-    var resDisp = params.getResDisp(request.session.proForm);
+    var dispForm = params.getResDisp(request.session.dispForm);    //transform form input into layout for display-translate param codes
     response.render('shosurvey', {pgTitle: params.getPgTitle('shosurvey'),
-                                  resDisp: resDisp });
+                                  formDisp: dispForm });
 });
 
 //error page functions
@@ -196,21 +209,18 @@ app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
 });
 
-/* 
-        newUser.save(function (err) {
-            if (err) throw err;        
-        });
-        //console.log(dbEmail.userEmail);    NODE FUCKING SUCKS!!!
-        //name = dbEmail.userEmail;
-    });
-    Confirmed.findOne({email: 'def@defmix.com'}, function(err, user) {
-            //if (err) throw err;
-            // request.session.surveyId = user._id;        this is the new id number in Confirmed, add to session mem for dosurvey 
-            console.log(user);
-            //console.log(user._id);            
-            delete request.session.unconfE;
-            delete request.session.inpEmail;
-            return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
-            // how to do a time-delayed redirect to the dosurvey page
-    });
-*/
+    /* TO DO 
+    1. create display page for all the survey entries in collection
+    2. finish making the survey entries (a few radio boxes, a comment box)
+    3. set up front and back end verification of all inputs - including error msgs for missing inputs
+    4. set up filtering of all inputs to prevent database hacking code 
+    5. create error pages and redirect pages if emails are unconfirmed or email is confirmed but survey never taken
+    6 clean up css - pretty things up
+    7. THE BIG GOALS:  setup member login page (so an existing member can edit or add another job survey data)
+    8. THE BIG GOALS:  set up different queries so user can query by state, gender, age, etc.
+    9. TEAM GOALs: finish the captcha code, 
+    10. TEAM GOALS:  get the APIs from other sites up and working */
+
+    
+    
+    
