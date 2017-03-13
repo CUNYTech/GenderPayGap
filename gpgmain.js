@@ -116,29 +116,30 @@ app.get('/confirm', function(request, response) {
             request.session.confE = unconfE;           
             return response.redirect(303, '/returnuser');   // change to resubmit page (once created)
         }
-        dbEmail.confirmed = true;               // set email in unconfirmedemail as confirmed
+        dbEmail.confirmed = true;                          // set email in unconfirmedemail as confirmed
         dbEmail.save(function(err) {
             if (err) throw err;
         });
-        console.log(dbEmail.userEmail);
-        var newUser = new Confirmed({           // create new entry in confirmedemail collection
+        
+        var newUser = new Confirmed({                      // create new entry in confirmedemail collection
             email: dbEmail.userEmail
         });
         newUser.save(function (err) {
             if (err) throw err;
-        });
-        Confirmed.find({email: dbEmail.userEmail}, '_id', function(err, user) {
-            if (err) throw err;
-            request.session.surveyId = user._id;        // this is the new id number in Confirmed, add to session mem for dosurvey 
-            console.log(user._id);            
-            delete request.session.unconfE;
-            delete request.session.inpEmail;
-            return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
-            // how to do a time-delayed redirect to the dosurvey page
+            Confirmed.findOne({email: dbEmail.userEmail}, function(err, user) {      //THIS SHOULD BE A PROMISE!!!!! 
+                if (err) throw err;
+                // request.session.surveyId = user._id;        this is the new id number in Confirmed, add to session mem for dosurvey 
+                console.log(user);
+                //console.log(user._id);            
+                delete request.session.unconfE;
+                delete request.session.inpEmail;
+                return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
+                // how to do a time-delayed redirect to the dosurvey page
+            });
         });
     });
 });
-app.get('/returnuser', function(request, response) {                           //this page for emails confirmed, check if survey completed
+app.get('/returnuser', function(request, response) {                     // this page for emails confirmed, check if survey completed
     response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
                                    inpEmail: request.session.inpEmail          
     }); 
@@ -197,3 +198,21 @@ app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
 });
 
+/* 
+        newUser.save(function (err) {
+            if (err) throw err;        
+        });
+        //console.log(dbEmail.userEmail);    NODE FUCKING SUCKS!!!
+        //name = dbEmail.userEmail;
+    });
+    Confirmed.findOne({email: 'def@defmix.com'}, function(err, user) {
+            //if (err) throw err;
+            // request.session.surveyId = user._id;        this is the new id number in Confirmed, add to session mem for dosurvey 
+            console.log(user);
+            //console.log(user._id);            
+            delete request.session.unconfE;
+            delete request.session.inpEmail;
+            return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
+            // how to do a time-delayed redirect to the dosurvey page
+    });
+*/
