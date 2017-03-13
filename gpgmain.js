@@ -1,3 +1,6 @@
+/* Fred - take email submit and captcha out of home.handlebars and make a it partial to be inserted in home and email resubmit page,
+    also create an email resubmit page (for people who don't confirm email right away but email is in our db) */
+
 var express = require('express');
 var app = express();
 var handlebars = require('express3-handlebars').create({defaultLayout: 'main'});
@@ -7,7 +10,8 @@ app.use(require('body-parser')());
 var credentials = require('./credentials.js');      // remember to set your credentials.js file 
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
-var mongoose = require('mongoose');
+                                                    
+var mongoose = require('mongoose');             // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 var opts = {
     server: {
@@ -25,9 +29,9 @@ switch(app.get('env')) {
         throw new Error('Unknown execution environment: ' + app.get('env'));
 };
 var Unconfirmed = require('./models/unconfirmed.js');
-
-
-var params = require('./lib/gpgParams.js');
+var Confirmed = require('./models/confirmed.js');
+                
+var params = require('./lib/gpgParams.js');                 // the main parameters for the site
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 
@@ -67,68 +71,85 @@ app.post('/', function(request, response) {
     });
     //end Nicholas captcha code */
 
-    var inpEmail = request.body.inpEmail.trim();       // FRED - add server-side email verification
+    var inpEmail = request.body.inpEmail.trim();                    // FRED - add server-side email verification
     if (inpEmail === "") return response.redirect(303, '/');
-    request.session.inpEmail = inpEmail;
+    request.session.inpEmail = inpEmail;                            // add email input to session memory
     
-    Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, unconfirmed) {
-        if (unconfirmed) {
-            return response.redirect(303, '/returnuser');
+    Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
+        if (user) {                                                 // if email exists already, do not re-save
+            if (!user.confirmed)                                    // if email exists but is not confirmed
+                return response.redirect(303, '/returnuser');       // change to resubmit page (once it's created)
+            else 
+                return response.redirect(303, '/returnuser');      // if email exists and confirmed, redirect to returnuser
         }
-        new Unconfirmed({
-            userEmail: inpEmail
+        new Unconfirmed({                                         // add email to unconfirmedemails collec. 
+            userEmail: inpEmail                 // instead of making another db request in '/thanks' get id here
         }).save();
         response.redirect(303, '/thanks');
     });
 });
 app.get('/thanks', function(request, response) {
-    if (!request.session.inpEmail) return response.redirect(303, '/');
-    Unconfirmed.findOne({userEmail: request.session.inpEmail}, '_id', function(err, unconfirmed) {
-        if (!unconfirmed) {
+    if (!request.session.inpEmail) 
+        return response.redirect(303, '/');
+    Unconfirmed.findOne({userEmail: request.session.inpEmail}, '_id', function(err, user) {         //get id of email input
+        if (!user) {
             return response.redirect(303, '/');
         }
         response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
                                    inpEmail: request.session.inpEmail, 
-                                   dbENum: unconfirmed._id
+                                   dbENum: user._id                                                 // send id to 'email' link
         }); 
     });
 });
 app.get('/confirm', function(request, response) {
     var unconfE;
     if (request.query.unconfE)
-        unconfE = request.query.unconfE;
+        unconfE = request.query.unconfE;                    // id comes from GET request, if not, redirect to home page
     else    
         return response.redirect(303, '/');
+    
     Unconfirmed.findById(unconfE, function(err, dbEmail) {
         if (err) console.log(err);
+                                                // if there is no record, or the record has no email addres, reject, send home
         if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
-        if (dbEmail.confirmed) {
-            request.session.confE = unconfE;
-            return response.redirect(303, '/returnuser');
+        if (dbEmail.confirmed) {                        // if id is unconfirmed, send to returnuser to resubmit page (create it)
+            request.session.confE = unconfE;           
+            return response.redirect(303, '/returnuser');   // change to resubmit page (once created)
         }
-        request.session.surveyE = unconfE;
-        dbEmail.confirmed = true;
+        dbEmail.confirmed = true;               // set email in unconfirmedemail as confirmed
         dbEmail.save(function(err) {
             if (err) throw err;
-            console.log(dbEmail);
-        })
-        return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
-        // how to do a time-delayed redirect to the dosurvey page
+        });
+        console.log(dbEmail.userEmail);
+        var newUser = new Confirmed({           // create new entry in confirmedemail collection
+            email: dbEmail.userEmail
+        });
+        newUser.save(function (err) {
+            if (err) throw err;
+        });
+        Confirmed.find({email: dbEmail.userEmail}, '_id', function(err, user) {
+            if (err) throw err;
+            request.session.surveyId = user._id;        // this is the new id number in Confirmed, add to session mem for dosurvey 
+            console.log(user._id);            
+            delete request.session.unconfE;
+            delete request.session.inpEmail;
+            return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
+            // how to do a time-delayed redirect to the dosurvey page
+        });
     });
 });
-app.get('/returnuser', function(request, response) {
+app.get('/returnuser', function(request, response) {                           //this page for emails confirmed, check if survey completed
     response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
-                               inpEmail: request.session.inpEmail          //, dbENum: request.sesssion.dbENum
+                                   inpEmail: request.session.inpEmail          
     }); 
 });
 
 app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
-    
     response.render('dosurvey', {pgTitle: params.getPgTitle('dosurvey'), 
                                 conEmail: request.session.conEmail,             
                                 params: params,
-                                inpForm: (request.session.inpForm) ? inpForm : false,    //params for validation failure
-                                alarm: (request.session.alarm) ? alarm : false });
+                                inpForm: (request.session.inpForm) ? inpForm : false,    //params for if SS validation sees a problem
+                                alarm: (request.session.alarm) ? alarm : false });  // this is for error code - serverside validation
 });
 app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page
     var passThru = true;
@@ -148,7 +169,7 @@ app.post('/prosurvey', function(request, response) {        //this function proc
         inpForm[params.getNonReqField(i)] = request.body[params.getNonReqField(i)];
     }
                                                         // Fred - add filter for special characters for username, employer fields
-                                                        // BILLY!  take inpform obj to add form data to db here
+                                                        //  add form data to db here 
     request.session.proForm = inpForm;
     if (request.session.alarm) delete request.sesion.alarm;
     response.redirect(303, '/shosurvey');
