@@ -126,11 +126,9 @@ app.get('/confirm', function(request, response) {
         });
         newUser.save(function (err) {
             if (err) throw err;
-            Confirmed.findOne({email: dbEmail.userEmail}, function(err, user) {      //THIS SHOULD BE A PROMISE!!!!! 
+            Confirmed.findOne({email: dbEmail.userEmail}, '_id', function(err, user) {      //THIS SHOULD BE A PROMISE!!!!! 
                 if (err) throw err;
-                // request.session.surveyId = user._id;        this is the new id number in Confirmed, add to session mem for dosurvey 
-                console.log(user);
-                //console.log(user._id);            
+                request.session.surveyId = user._id;       // this is the new id number in Confirmed, add to session mem for dosurvey 
                 delete request.session.unconfE;
                 delete request.session.inpEmail;
                 return response.render('confirm', {pgTitle: params.getPgTitle('confirm') });
