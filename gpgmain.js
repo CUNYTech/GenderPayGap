@@ -128,7 +128,6 @@ app.get('/confirm', function(request, response) {   // Fred - add referrer page 
             if (err) throw err;
             Confirmed.findOne({email: dbEmail.userEmail}, '_id', function(err, user) {      //THIS SHOULD BE A PROMISE!!!!! 
                 if (err) throw err;
-                console.log(user._id);
                 request.session.surveyId = user._id;       // this is the new id number in Confirmed, add to session mem for dosurvey 
                 delete request.session.unconfE;
                 delete request.session.inpEmail;
@@ -138,19 +137,12 @@ app.get('/confirm', function(request, response) {   // Fred - add referrer page 
         });
     });
 });
-app.get('/returnuser', function(request, response) {                // this page for emails already confirmed, check if survey completed
-    response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
-                                   inpEmail: request.session.inpEmail          
-    }); 
-});
-
 app.get('/dosurvey', function(request, response) {          // Fred - add referrer page restriction to disable back button
     var surveyId;
     if (request.session.surveyId)
         surveyId = request.session.surveyId;
     else 
         return response.redirect(303, '/');
-    console.log(surveyId);
     Confirmed.findById(surveyId, function(err, user) {
         if (err) console.log(err);
                                                     // if there is no record, or the record has no email address, reject, send home
@@ -163,10 +155,16 @@ app.get('/dosurvey', function(request, response) {          // Fred - add referr
         });                                                    
     });
 });
-app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page - 
-    var passThru = true;                                    //FRED - add server-side verification
+app.post('/prosurvey', function(request, response) {        //this function processes the form data, it does not render a page
+    var surveyId;
+    if (request.session.surveyId)
+        surveyId = request.session.surveyId;
+    else 
+        return response.redirect(303, '/');
+    
+    var passThru = true;                                   
     var inpForm = {
-        email: request.session.inpEmail
+        surveyDate: Date.now                // this isn't going through, check -FRED
     };
     for (var i = 0; i < params.getReqFieldLen(); i++) {
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
@@ -182,17 +180,35 @@ app.post('/prosurvey', function(request, response) {        //this function proc
     }
                                                         // Fred - add filter for special characters for username, employer fields
                                                         //  add form data to db here 
-    request.session.dispForm = inpForm;
-    if (request.session.alarm) delete request.sesion.alarm;
-    response.redirect(303, '/shosurvey');
+    Confirmed.findById(surveyId, function(err, user) {
+        if (err) throw (err);
+                                                    // if there is no record, or the record has no email address, reject, send home
+        if (!user || !user.email) return response.redirect(303, '/');
+        console.log(user);
+        for (var i = 0; i < params.allFieldsMap.length; i++) {
+            user[params.allFieldsMap[i]] = inpForm[params.allFieldsMap[i]];
+        }
+        console.log(user);
+        user.save(function(err) {
+            if (err) throw (err);
+            request.session.dispForm = inpForm;
+            if (request.session.alarm) delete request.sesion.alarm;
+            response.redirect(303, '/shosurvey');        
+        });
+    });
 });
 app.get('/shosurvey', function(request, response) {      // add referrer page verification before entering page.
-    if (!request.session.proForm) {
+    if (!request.session.dispForm) {
         response.redirect(303, '/');
     }
     var dispForm = params.getResDisp(request.session.dispForm);    //transform form input into layout for display-translate param codes
     response.render('shosurvey', {pgTitle: params.getPgTitle('shosurvey'),
-                                  formDisp: dispForm });
+                                  dispForm: dispForm });
+});
+app.get('/returnuser', function(request, response) {                // this page for emails already confirmed, check if survey completed
+    response.render('returnuser', {pgTitle: params.getPgTitle('returnuser'), 
+                                   inpEmail: request.session.inpEmail          
+    }); 
 });
 
 //error page functions
