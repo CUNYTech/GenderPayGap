@@ -164,7 +164,7 @@ app.post('/prosurvey', function(request, response) {        //this function proc
     
     var passThru = true;                                   
     var inpForm = {
-        surveyDate: Date.now                // this isn't going through, check -FRED
+        surveyDate: new Date()                // this isn't going through, check -FRED
     };
     for (var i = 0; i < params.getReqFieldLen(); i++) {
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
@@ -178,17 +178,16 @@ app.post('/prosurvey', function(request, response) {        //this function proc
     for (var i = 0; i < params.getNonReqFieldLen(); i++) {
         inpForm[params.getNonReqField(i)] = request.body[params.getNonReqField(i)];
     }
-                                                        // Fred - add filter for special characters for username, employer fields
+                                                        // Fred - add sql injection for username, employer fields, job title
                                                         //  add form data to db here 
     Confirmed.findById(surveyId, function(err, user) {
         if (err) throw (err);
                                                     // if there is no record, or the record has no email address, reject, send home
         if (!user || !user.email) return response.redirect(303, '/');
-        console.log(user);
-        for (var i = 0; i < params.allFieldsMap.length; i++) {
+        inpForm.email = user.email;
+        for (var i = 1; i < params.allFieldsMap.length; i++) {           // start at index 1 since email (index 0) is already there.
             user[params.allFieldsMap[i]] = inpForm[params.allFieldsMap[i]];
         }
-        console.log(user);
         user.save(function(err) {
             if (err) throw (err);
             request.session.dispForm = inpForm;
@@ -228,7 +227,8 @@ app.listen(app.get('port'), function() {
     /* TO DO 
     1. create display page for all the survey entries in collection
     2. finish making the survey entries (a few radio boxes, a comment box)
-    3. set up front and back end verification of all inputs - including error msgs for missing inputs
+    2a Add session fields to the handlebar documents (part of server side validation)
+    3. set up front and back end validation of all inputs - including error msgs for missing inputs
     4. set up filtering of all inputs to prevent database hacking code 
     5. create error pages and redirect pages if emails are unconfirmed or email is confirmed but survey never taken
     6 clean up css - pretty things up
