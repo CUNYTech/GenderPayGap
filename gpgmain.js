@@ -41,7 +41,7 @@ app.get('/', function(request, response) {
                             addCaptcha: true });
 });
 app.post('/', function(request, response) {
- /*   // Nicholas captcha code 
+ /*   // captcha code 
     if (request.body['g-recaptcha-response'] === undefined ||
         request.body['g-recaptcha-response'] === '' ||
         request.body['g-recaptcha-response'] === null) {
@@ -69,7 +69,7 @@ app.post('/', function(request, response) {
         "responseCode": 0,
         "responseDesc": "Success"
     });
-    //end Nicholas captcha code */
+    //end captcha code */
 
     var inpEmail = request.body.inpEmail.trim();                    // FRED - add server-side email verification
     if (inpEmail === "") return response.redirect(303, '/');
