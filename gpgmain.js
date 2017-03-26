@@ -10,7 +10,7 @@ app.use(require('body-parser')());
 var credentials = require('./credentials.js');      // remember to set your credentials.js file 
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
-var requester = require("request");             // node http request object
+//var requester = require("request");             // node http request object
 var mongoose = require('mongoose');             // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 var opts = {
@@ -32,6 +32,7 @@ var Unconfirmed = require('./models/unconfirmed.js');            // mongoose sch
 var Confirmed = require('./models/confirmed.js');                // mongoose schema
                 
 var params = require('./lib/gpgParams.js');                 // the main parameters for the site
+var CaptchaChek = require('./lib/gpgCaptcha.js');
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 
@@ -46,40 +47,23 @@ app.post('/', function(request, response) {
     var inpEmail = request.body.inpEmail.trim();                    // FRED - add server-side email verification
     if (inpEmail === "") return response.redirect(303, '/');
     request.session.inpEmail = inpEmail;                            // add email input to session memory
-        
-    // captcha code -- FRED move this code into a separate js util file so it can be reused.  params:  request, credentials
-    if (request.body['g-recaptcha-response'] === undefined ||
-        request.body['g-recaptcha-response'] === '' ||
-        request.body['g-recaptcha-response'] === null) {
-            request.session.errorMsg = 'Please check the Captcha box first';
-            return response.redirect(303, '/');
-    }
-    // Insert Secret Key.
-    var secretKey = credentials.secretKey;
-    var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + 
-        request.body['g-recaptcha-response'] + "&remoteip=" + request.connection.remoteAddress;
-    // Hitting GET request to the URL, Google responds with success or error.
-    requester(verificationUrl, function(error, response, body) { 
-        body = JSON.parse(body);
-        // Success will be true or false depending on validation.
-        if (body.success !== undefined && !body.success) {
-            request.session.errorMsg = 'Captcha verification failed. Please try again.';
-            return response.redirect(303, '/');
-        }
-    });
-    // captcha success -- end captcha code
-    Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
-        if (user) {                                                 // if email exists already, do not re-save
+    
+    var dbSave = function() {                                       // this is a callback after the captchachek
+        Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
+            if (err) throw err;
+            if (user) {                                                 // if email exists already, do not re-save
             if (!user.confirmed)                                    // if email exists but is not confirmed
-                return response.redirect(303, '/returnuser');       // redirect to resubmit page (once it's created)
+                return response.redirect(303, '/returnuser');       // redirect to FRED!! -- create resubmit page 
             else 
                 return response.redirect(303, '/returnuser');      // if email exists and confirmed, redirect to returnuser
         }
         new Unconfirmed({                                         // add email to unconfirmedemails collec. 
-            userEmail: inpEmail                 // instead of making another db request in '/thanks' get id here
-        }).save();
+            userEmail: inpEmail                
+            }).save();
         response.redirect(303, '/thanks');
-    });
+        });
+    };
+    CaptchaChek(request, response, credentials.secretKey, '/', dbSave);
 });
 app.get('/thanks', function(request, response) {
     if (!request.session.inpEmail) 

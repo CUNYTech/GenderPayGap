@@ -130,6 +130,8 @@
     text-align: center;
     color: crimson;
     font-weight: 800;
+}
+.errorTxt.bx {
     border: 2px solid crimson;
 }
 /* ******************** SHOW DISPLAY PAGE *********************/
