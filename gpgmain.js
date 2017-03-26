@@ -10,7 +10,7 @@ app.use(require('body-parser')());
 var credentials = require('./credentials.js');      // remember to set your credentials.js file 
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
-var requester = require("request");
+var requester = require("request");             // node http request object
 var mongoose = require('mongoose');             // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 var opts = {
