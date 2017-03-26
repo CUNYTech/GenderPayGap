@@ -10,7 +10,7 @@ app.use(require('body-parser')());
 var credentials = require('./credentials.js');      // remember to set your credentials.js file 
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
-                                                    
+var requester = require("request");
 var mongoose = require('mongoose');             // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 var opts = {
@@ -37,44 +37,35 @@ app.use(express.static(__dirname + '/public'));
 
 // page display and get/post functions 
 app.get('/', function(request, response) {
-   response.render('home', {pgTitle: params.getPgTitle('home'),
+   response.render('home', {pgTitle: params.getPgTitle('home'),         // FRED add params in handlebar file for inpEmail and errorMsg
                             addCaptcha: true });
 });
 app.post('/', function(request, response) {
-    // captcha code 
+    var inpEmail = request.body.inpEmail.trim();                    // FRED - add server-side email verification
+    if (inpEmail === "") return response.redirect(303, '/');
+    request.session.inpEmail = inpEmail;                            // add email input to session memory
+        
+    // captcha code -- FRED move this code into a separate js util file so it can be reused.  params:  request, credentials
     if (request.body['g-recaptcha-response'] === undefined ||
         request.body['g-recaptcha-response'] === '' ||
         request.body['g-recaptcha-response'] === null) {
-        return response.json({
-            "responseCode": 1,
-            "responseDesc": "Please select captca"
-        });
+            request.session.errorMsg = 'Fill out the Captcha box first';
+            return response.redirect(303, '/');
     }
     // Insert Secret Key.
     var secretKey = credentials.secretKey;
     var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + 
         request.body['g-recaptcha-response'] + "&remoteip=" + request.connection.remoteAddress;
     // Hitting GET request to the URL, Google responds with success or error.
-    request(verificationUrl, function(error, response, body) { 
+    requester(verificationUrl, function(error, response, body) { 
         body = JSON.parse(body);
         // Success will be true or false depending on validation.
         if (body.success !== undefined && !body.success) {
-            return response.json({
-                "responseCode": 1,
-                "responseDesc": "Failed captcha verification"
-            });
+            request.session.errorMsg = 'Captcha verification failed, please try again.';
+            return response.redirect(303, '/');
         }
     });
-    response.json({
-        "responseCode": 0,
-        "responseDesc": "Success"
-    });
-    //end captcha code
-
-    var inpEmail = request.body.inpEmail.trim();                    // FRED - add server-side email verification
-    if (inpEmail === "") return response.redirect(303, '/');
-    request.session.inpEmail = inpEmail;                            // add email input to session memory
-    
+    // captcha success -- end captcha code
     Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
         if (user) {                                                 // if email exists already, do not re-save
             if (!user.confirmed)                                    // if email exists but is not confirmed
@@ -223,19 +214,6 @@ app.use(function(err, request, response, next) {         // this for program/db 
 app.listen(app.get('port'), function() {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Cntrl-C to terminate.');
 });
-
-    /* TO DO 
-    1. create display page for all the survey entries in collection
-    2. finish making the survey entries (a few radio boxes, a comment box)
-    2a Add session fields to the handlebar documents (part of server side validation)
-    3. set up front and back end validation of all inputs - including error msgs for missing inputs
-    4. set up filtering of all inputs to prevent database hacking code 
-    5. create error pages and redirect pages if emails are unconfirmed or email is confirmed but survey never taken
-    6 clean up css - pretty things up
-    7. THE BIG GOALS:  setup member login page (so an existing member can edit or add another job survey data)
-    8. THE BIG GOALS:  set up different queries so user can query by state, gender, age, etc.
-    9. TEAM GOALs: finish the captcha code, 
-    10. TEAM GOALS:  get the APIs from other sites up and working */
 
     
     
