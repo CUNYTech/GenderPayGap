@@ -32,7 +32,7 @@ var Unconfirmed = require('./models/unconfirmed.js');            // mongoose sch
 var Confirmed = require('./models/confirmed.js');                // mongoose schema
                 
 var params = require('./lib/gpgParams.js');                 // the main parameters for the site
-var CaptchaChek = require('./lib/gpgCaptcha.js');
+var CaptchaChek = require('./lib/gpgCaptcha.js');           // captcha verification moved here.
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 
@@ -63,7 +63,7 @@ app.post('/', function(request, response) {
         response.redirect(303, '/thanks');
         });
     };
-    CaptchaChek(request, response, credentials.secretKey, '/', dbSave);
+    CaptchaChek(request, response, credentials.secretKey, '/', dbSave);   //captchacheck verification
 });
 app.get('/thanks', function(request, response) {
     if (!request.session.inpEmail) 
