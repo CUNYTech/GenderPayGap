@@ -63,6 +63,17 @@
 #capFrnt {
     margin: 3% 0 0 30%;
 }
+/* SERVER SIDE ERROR MESSAGES */
+#errorBxClient {
+    display: none;
+}
+#errorBxServ {
+    margin: 2% 0 0 -13%;
+    font-size: 1.9rem;
+    font-variant: small-caps;
+    font-weight: 900;
+}
+
 /* CONFIRM and DOSURVEY (FORM) PAGE */
 #pgConfirm {
     font-size: 2rem;
@@ -116,8 +127,10 @@
     text-align: center;
 }
 .errorTxt {
+    text-align: center;
     color: crimson;
     font-weight: 800;
+    border: 2px solid crimson;
 }
 /* ******************** SHOW DISPLAY PAGE *********************/
 #pgDisplay {

@@ -28,8 +28,8 @@ switch(app.get('env')) {
     default:
         throw new Error('Unknown execution environment: ' + app.get('env'));
 };
-var Unconfirmed = require('./models/unconfirmed.js');
-var Confirmed = require('./models/confirmed.js');
+var Unconfirmed = require('./models/unconfirmed.js');            // mongoose schema
+var Confirmed = require('./models/confirmed.js');                // mongoose schema
                 
 var params = require('./lib/gpgParams.js');                 // the main parameters for the site
 app.set('port', process.env.PORT || 3000);
@@ -37,7 +37,9 @@ app.use(express.static(__dirname + '/public'));
 
 // page display and get/post functions 
 app.get('/', function(request, response) {
-   response.render('home', {pgTitle: params.getPgTitle('home'),         // FRED add params in handlebar file for inpEmail and errorMsg
+   response.render('home', {pgTitle: params.getPgTitle('home'),   
+                            inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
+                            errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false,
                             addCaptcha: true });
 });
 app.post('/', function(request, response) {
@@ -49,7 +51,7 @@ app.post('/', function(request, response) {
     if (request.body['g-recaptcha-response'] === undefined ||
         request.body['g-recaptcha-response'] === '' ||
         request.body['g-recaptcha-response'] === null) {
-            request.session.errorMsg = 'Fill out the Captcha box first';
+            request.session.errorMsg = 'Please check the Captcha box first';
             return response.redirect(303, '/');
     }
     // Insert Secret Key.
@@ -61,7 +63,7 @@ app.post('/', function(request, response) {
         body = JSON.parse(body);
         // Success will be true or false depending on validation.
         if (body.success !== undefined && !body.success) {
-            request.session.errorMsg = 'Captcha verification failed, please try again.';
+            request.session.errorMsg = 'Captcha verification failed. Please try again.';
             return response.redirect(303, '/');
         }
     });

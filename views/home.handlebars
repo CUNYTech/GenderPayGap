@@ -3,11 +3,20 @@
     <p>How does your salary compare with other genders in the U.S.? <br>Let's find out.</p>
     <section id="hpEmail">
         <form id="formEmail" method="post">
-            Please provide your email <input id="inpEmail" name="inpEmail" type="email" size="25" autofocus required >
+            Please provide your email <input id="inpEmail" name="inpEmail" type="email" size="25" 
+                                             {{#if inpEmail}} value="{{inpEmail}}" {{/if}} autofocus required >
             <aside id="capFrnt">
                 <div class="g-recaptcha" data-sitekey="6Le8sBcUAAAAAALeP4Y-6e2hp35USWC0MUM9TUcy"></div>
             </aside>
             <button id="btnEmail" type="submit">Submit</button>
         </form>
+        <aside id="errorBxClient">
+            <span class="errorTxt"></span>
+        </aside>
+        {{#if errorMsg}}
+            <aside id="errorBxServ">
+                <span class="errorTxt">{{errorMsg}}</span>
+            </aside>
+        {{/if}}
     </section>
 </article>
