@@ -222,7 +222,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         user.save(function(err) {
             if (err) throw (err);
             request.session.dispForm = inpForm;
-            if (request.session.alarm) delete request.sesion.alarm;
+            if (request.session.alarm) delete request.session.alarm;
             response.redirect(303, '/shosurvey');
         });
     });
