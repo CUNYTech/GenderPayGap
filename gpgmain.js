@@ -33,7 +33,11 @@ var params = require('./lib/gpgParams.js');                 // the main paramete
 var CaptchaChek = require('./lib/gpgCaptcha.js');           // captcha verification moved here.
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
-
+app.use(function(request, response, next) {                 // for flash error messages
+    response.locals.flash = request.session.flash;
+    delete request.session.flash;
+    next();
+});
 // page display and get/post functions 
 app.get('/', function(request, response) {
    response.render('home', {pgTitle: params.getPgTitle('home'),   
@@ -50,32 +54,66 @@ app.post('/', function(request, response) {
         Unconfirmed.findOne({userEmail: inpEmail}, '_id', function(err, user) {
             if (err) throw err;
             if (user) {                                                 // if email exists already, do not re-save
-            if (!user.confirmed)                                    // if email exists but is not confirmed
-                return response.redirect(303, '/returnuser');       // redirect to FRED!! -- create resubmit page 
-            else 
-                return response.redirect(303, '/returnuser');      // if email exists and confirmed, redirect to returnuser
-        }
-        new Unconfirmed({                                         // add email to unconfirmedemails collec. 
-            userEmail: inpEmail                
-            }).save();
-        if (request.session.errorMsg) delete request.session.errorMsg;
-        response.redirect(303, '/thanks');
+                console.log(user);
+                if (!user.confirmed)                                    // if email exists but is not confirmed
+                    return response.redirect(303, '/resubmit');       // redirect to FRED!! -- create resubmit page 
+                else 
+                    return response.redirect(303, '/returnuser');      // if email exists and confirmed, redirect to returnuser
+            }
+            new Unconfirmed({                                         // add email to unconfirmedemails collec. 
+                userEmail: inpEmail                
+                }).save();
+            if (request.session.errorMsg) delete request.session.errorMsg;
+            response.redirect(303, '/thanks');
         });
     };
     CaptchaChek(request, response, credentials.secretKey, '/', dbSave);   //captchacheck verification
 });
-app.get('/thanks', function(request, response) {
-    if (!request.session.inpEmail) 
+app.get('/resubmit', function(request, response) {
+    var inpEmail;
+    if (request.session.inpEmail) {
+        inpEmail = request.session.inpEmail;
+    } else {
+        request.session.flash = {
+            type: 'warning',
+            intro: 'Internal Error',
+            message: 'An error occured. Please start over.',
+        };
         return response.redirect(303, '/');
-    Unconfirmed.findOne({userEmail: request.session.inpEmail}, '_id', function(err, user) {         //get id of email input
-        if (!user) {
-            return response.redirect(303, '/');
-        }
+    }
+    response.render('resubmit', {pgTitle: params.getPgTitle('resubmit'), 
+                                   inpEmail: inpEmail,                                        
+    }); 
+    
+});
+app.get('/thanks', function(request, response) {
+    var inpEmail;
+    if (request.session.inpEmail) {
+        inpEmail = request.session.inpEmail;
+    } else {
+        request.session.flash = {
+            type: 'warning',
+            intro: 'Internal Error',
+            message: 'An error occured. Please start over.',
+        };
+        return response.redirect(303, '/');
+    }
+    var mailAndRender = function(idNum) {
         response.render('thanks', {pgTitle: params.getPgTitle('thanks'), 
-                                   inpEmail: request.session.inpEmail, 
-                                   dbENum: user._id                                                 // send id to 'email' link
+                                   inpEmail: inpEmail, 
+                                   dbENum: idNum,                                                // send id to 'email' link
         }); 
-    });
+    };
+    if (request.session.dbENum) {
+        mailAndRender(request.session.dbENum);
+    } else {
+        Unconfirmed.findOne({userEmail: request.session.inpEmail}, '_id', function(err, user) {         //get id of email input
+            if (!user) {
+                return response.redirect(303, '/');
+            }
+            mailAndRender(user._id);
+        });
+    }
 });
 app.get('/confirm', function(request, response) {   // Fred - add referrer page restriction to disable back button
     var unconfE;
@@ -140,7 +178,7 @@ app.post('/prosurvey', function(request, response) {        //this function proc
     
     var passThru = true;                                   
     var inpForm = {
-        surveyDate: new Date()                // this isn't going through, check -FRED
+        surveyDate: new Date                // this isn't going through, check -FRED
     };
     for (var i = 0; i < params.getReqFieldLen(); i++) {
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];

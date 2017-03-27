@@ -12,3 +12,5 @@ GenderPayGap
 After, you should do `node gpgmain.js` to have Node execute our JS file. Then you
 should open up your preferential web browser and type in: `localhost:3000` to run
 the web app locally.
+
+3/36/2017 - added some fake "flash" error msgs via node sessions, handlebars and bootstrap, but the bootstrap layout is pretty hideous. I will use the idea however to make a different type of "flash" message.
