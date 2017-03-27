@@ -34,7 +34,8 @@ var Unconfirmed = require('./models/unconfirmed.js'); // mongoose schema
 var Confirmed = require('./models/confirmed.js'); // mongoose schema
 
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
-var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification moved here.
+var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
+var emailSender = require('./lib/gpgEmailer.js')(credentials);  // emailer utilities here
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 app.use(function(request, response, next) { // for flash error messages
@@ -108,10 +109,10 @@ app.get('/thanks', function(request, response) {
         return response.redirect(303, '/');
     }
     var mailAndRender = function(idNum) {
+        emailSender.send(response, inpEmail, idNum);   // send confirmation email
         response.render('thanks', {
             pgTitle: params.getPgTitle('thanks'),
             inpEmail: inpEmail,
-            dbENum: idNum, // send id to 'email' link
         });
     };
     if (request.session.dbENum) {
