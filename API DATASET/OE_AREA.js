@@ -1,6 +1,6 @@
 var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_CODE eq ";
 var userInput = "'0040380'"; //temporary example
-realmStatus = realmStatus.concat(ch);
+realmStatus = realmStatus.concat(userInput);
 var encode = encodeURI(realmStatus);
 
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
