@@ -1,4 +1,4 @@
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4/&$select=AREA_CODEeq'0040380'";
 
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
@@ -11,7 +11,8 @@ var options = {
         type: 'GET',
         dataType: 'json',
         headers: {'accept' : 'application/json'}
-    };
+};
+
 
 
 
