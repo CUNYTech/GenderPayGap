@@ -77,6 +77,11 @@ app.post('/', function(request, response) {
     };
     CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
 });
+
+// How to load in login page when login button is pressed?
+app.get('/login', function(request, response) ) {
+
+}
 app.get('/resubmit', function(request, response) {
     var inpEmail;
     if (request.session.inpEmail) {

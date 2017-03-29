@@ -18,44 +18,17 @@
             <strong>{{flash.intro}}</strong> {{{flash.message}}}
         </div>
     {{/if}}
-    <div id="page">
-        <div class="home">
-            <img class="center-block" src="/img/gender_symbol.jpg" />
-        </div>
-        <!-- Two Buttons -->
-        <div class="home_buttons text-center">
-            <button type="button" class="btn btn-default btn-info">Learn More</button>
-            <button type="button" class="btn btn-default btn-danger">Sign Up</button>
-        </div>
-    </div>
-    <h2 class="text-center">More Stuff... </h2>
     <article id="mainBody">
         {{{body}}}
     </article>
+    
     <!-- Scripts to make bootstrap functional -->
-
     <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
     <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>-->
-    {{#if addCaptcha}}
-        <script>
-            $(document).ready(function() {
-                $('#formEmail').submit(function() {
-                    $(this).ajaxSubmit({
-                        error: function(xhr) {
-                            status("Error: " + xhr.status);
-                        },
-                        success: function(response) {
-                            console.log(response);
-                        }
-                    });
-                    return false;
-                });
-            });
-        </script>
-    {{/if}}
+
 </body>
 
 </html>
