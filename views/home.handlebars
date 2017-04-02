@@ -1,6 +1,15 @@
+<div id="page">
+    <div class="home">
+        <img class="center-block" src="/img/gender_symbol.jpg" />
+        <h1>Welcome To Gender Equality</h1>
+        <p>How does your salary compare with other genders in the U.S.? <br>Let's find out.</p>
+        <button href="#form">sign up</button>
+    </div>
+</div>
+
+<h1 class="text-center">Keeping this for presentation purposes, its on the way out</h1>
 <article id="homePage">
-    <h1>Welcome To Gender Equality</h1>
-    <p>How does your salary compare with other genders in the U.S.? <br>Let's find out.</p>
+
     <section id="hpEmail">
         <form id="formEmail" method="post">
             Please provide your email <input id="inpEmail" name="inpEmail" type="email" size="25" {{#if inpEmail}} value="{{inpEmail}}" {{/if}} autofocus required> {{>captchabox}}
@@ -16,3 +25,54 @@
         {{/if}}
     </section>
 </article>
+
+<div class="container center-block" id="form">
+    <div class="center-block form-horizontal">
+        <h1 class="text-center">SIGN UP</h1>
+        <hr/>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">E-mail Address</label>
+            <div class="col-sm-10">
+                <input type="email" class="form-control" id="inputEmail3" placeholder="Email">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control" id="inputPassword3" placeholder="Password">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
+            <div class="col-sm-10">
+                <input type="password" class="form-control" id="inputPassword3" placeholder="Password">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-default">Submit</button>
+            </div>
+        </div>
+        <hr/>
+        <a href="login.handlebars" class="text-center">Log In</a>
+    </div>
+</div>
+
+
+{{#if addCaptcha}}
+    <script>
+        $(document).ready(function() {
+            $('#formEmail').submit(function() {
+                $(this).ajaxSubmit({
+                    error: function(xhr) {
+                        status("Error: " + xhr.status);
+                    },
+                    success: function(response) {
+                        console.log(response);
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+{{/if}}

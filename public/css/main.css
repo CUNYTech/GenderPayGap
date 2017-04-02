@@ -1,58 +1,102 @@
 @import url('https://fonts.googleapis.com/css?family=Lobster|Oxygen');
-
+* {
+  margin: auto;
+  padding: 0;
+}
 #page{
    font-size: 1rem;
-   font-family: Georgia, Verdana, Helvetica, Sans-Serif;
+   font-family: 'Oxygen', Sans-Serif;
    margin-left: 0; margin-right: 0;
 }
+
+button {
+  background-color: #fc963c;
+}
+
 .home {
-   background-color: #778899; /* slate grey */ 
-   position: relative; 
-   margin-top: 51px; 
+   background-color: #514840;
+   position: relative;
+   margin-top: 51px;
    color: snow;
 }
-#website-title {
-   font-family: 'Lobster', cursive; 
-   font-size: 160%; 
-}
+
 .home img {
-   width: 100%; 
-   opacity: 0.40; 
-   position: relative;
-}
-.home_buttons > button{
-   position: block; 
    width: 100%;
+   opacity: 0.25;
+   position: relative;
+   min-height: 300px;
 }
-#mainBody {
-    position: absolute;
-    top: 10%;
-    left: 0;
-    right: 0;
-    margin: auto;
-    width: 99;
-    z-index: 1;
+
+.home h1 {
+  text-align: center;
+  font-size: 3em;
+  position: absolute;
+  left: 0; right: 0;
+  top: 0; bottom: 50%;
 }
+
+.home p {
+  text-align: center;
+  font-size: 2em;
+  position: absolute;
+  left: 0; right: 0;
+  top: 40%; bottom: 50%;
+}
+
+.home button {
+  font-size: 1.5em;
+  border-radius: 20px;
+  border-style: none;
+  text-transform: uppercase;
+  position: absolute;
+  left: 35%;
+  bottom: 10%;
+  width: 30%;
+}
+
+.home button:hover{
+  border-style: 2px solid #fc963c;
+  color: #fc963c;
+  background-color: snow;
+}
+
+#website-title {
+   font-family: 'Lobster', cursive;
+   font-size: 160%;
+}
+
+#form {
+
+}
+
+.form-horizontal {
+   color: snow;
+   margin-top: 50px;
+   margin-bottom: 51px;
+   background-color: #f28a30;
+   border-radius: 10px;
+   padding: 30px;
+}
+
+
+
+
 /* HOMEPAGE & ERROR PAGE */
 #homePage, #errorPage, #pgConfirm, #pgThanks, #pgDisplay {
     font-family: 'Oxygen', sans-serif;
-    color: snow;
+    color: black;
     font-size: 2rem;
     text-align: center;
 }
-#homePage h1 {
-    font-size: 3rem;
-    text-align: center;
-}
-#homePage p, {
-    text-align: center;
-}
+
 #hpEmail {
     margin: 1% 0 0 10%;
 }
+
 #inpEmail {
     color: rgb(0,0,0);
 }
+
 #btnEmail {
     display: block;
     color: rgb(0,191,255);
@@ -60,6 +104,7 @@
     background-color: rgb(0,0,128);
     margin: 2% 0 0 38%;
 }
+
 #capFrnt {
     margin: 3% 0 0 30%;
 }
@@ -103,13 +148,13 @@
 }
 .fmLbl, .fmInp {
     display: inline-block;
-} 
+}
 .fmLbl {
-    width: 39%; 
+    width: 39%;
 }
 /* THANKS PAGE */
 #pgThanks {
-    
+
 }
 #sampleEmail {
     width: 50%;
@@ -157,22 +202,18 @@
    .navbar-nav > button {
       margin-right: 10px;
       margin-left: 10px;
-   } 
+   }
 
-   #homePage h1 {
+   .home h1 {
       font-size: 4rem;
+      top: 20%;
+   }
+   .home p {
+     font-size: 2.5rem;
+     top: 50%;
    }
 
-   .home_buttons {
-      background-color: #151515;
-      padding: 10px;
-   }
-
-   .home_buttons > button {
-      display: inline-block;
-      width: 30%;
-      padding: 15px;
-      margin-left: 60px;
-      margin-right: 60px;
+   .home button {
+     padding: 10px;
    }
 }

@@ -78,6 +78,7 @@ app.post('/', function(request, response) {
     };
     CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
 });
+
 app.get('/resubmit', function(request, response) {
     var inpEmail;
     if (request.session.inpEmail) {
