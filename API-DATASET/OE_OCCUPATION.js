@@ -30,9 +30,9 @@ var x = http.request(options,function(res){
         if(res.statusCode == 200){
             try{
                 var data = JSON.parse(str);
-                var state = data.d.results[0].OCCUPATION_CODE;
-                array.push(state);
-                console.log(state);
+                var occupationNum = data.d.results[0].OCCUPATION_CODE;
+                array.push(occupationNum);
+                console.log(occupationNum);
             }catch(e){
                 console.log('Error parsing JSON');
             }
