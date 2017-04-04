@@ -1,4 +1,4 @@
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '151131') and (AREA_CODE eq '3600000')";
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '151131') and (AREA_CODE eq '4800000')";
 var encode = encodeURI(realmStatus);
 var array = [];
 
@@ -28,13 +28,16 @@ var x = http.request(options,function(res){
         if(res.statusCode == 200){
             try{
                 var data = JSON.parse(str);
-                var seriesNum = data.d.results[0].SERIES_ID;
+                //run a for loop 
+                var seriesNum = data.d[0].SERIES_ID; //<--- data.d[i].series_id
                 array.push(seriesNum);
                 console.log(seriesNum);
+                //end for
             }catch(e){
                 console.log('Error parsing JSON');
             }
         }
+        //console.log(data.toString());
     });
 });
 exports.getArea = function(seriesID){
