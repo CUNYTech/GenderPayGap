@@ -33,7 +33,7 @@ var x = http.request(options,function(res){
         if(res.statusCode == 200){
             try{
                 var data = JSON.parse(str);
-                var state = data.d.results[0].AREA_CODE;
+                var state = data.d[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                 array.push(state);
                 console.log(state);
             }catch(e){
