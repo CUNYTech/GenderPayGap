@@ -7,12 +7,52 @@ var handlebars = require('express3-handlebars').create({
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
+
 app.use(require('body-parser')());
 var credentials = require('./credentials.js'); // remember to set your credentials.js file
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
 var mongoose = require('mongoose'); // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
+
+// Packages for logging in.
+var expressValidator = require('express-validator');
+var flash = require('connect-flash');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+
+// Express Validator
+app.use(expressValidator({
+    errorFormatter: function(param, msg, value) {
+        var namespace = param.split('.'),
+            root = namespace.shift(),
+            formParam = root;
+
+        while (namespace.length) {
+            formParam += '[' + namespace.shift() + ']';
+        }
+        return {
+            param: formParam,
+            msg: msg,
+            value: value
+        };
+    }
+}));
+
+// Global Variables For Session Logging.
+app.use(function(req, res, next) {
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    res.locals.error = req.flash('error');
+    res.locals.user = req.user || null;
+    next();
+});
+
 var opts = {
     server: {
         socketOptions: {
@@ -32,10 +72,11 @@ switch (app.get('env')) {
 };
 var Unconfirmed = require('./models/unconfirmed.js'); // mongoose schema
 var Confirmed = require('./models/confirmed.js'); // mongoose schema
+var User = require('./models/unconfirmedUser.js'); // temporary schema.
 
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
 var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
-var emailSender = require('./lib/gpgEmailer.js')(credentials);  // emailer utilities here
+var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 app.use(function(request, response, next) { // for flash error messages
@@ -43,19 +84,92 @@ app.use(function(request, response, next) { // for flash error messages
     delete request.session.flash;
     next();
 });
-// page display and get/post functions
+// Landing page: home, parameters of inpEmail & errorMsg coming in from form.
 app.get('/', function(request, response) {
-    response.render('home', {
-        pgTitle: params.getPgTitle('home'),
-        inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
-        errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false,
-        addCaptcha: true
-    });
+    response.render('home');
 });
-app.post('/', function(request, response) {
+
+app.get('/register', function(request, response) {
+    response.render('register'), {
+        pgTitle: params.getPgTitle('register'),
+        inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
+        errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false
+    };
+});
+
+
+app.post('/register', function(request, response) {
+    // save inputted variables in post request here.
+    var email = request.body.inpEmail,
+        password = request.body.password,
+        password2 = request.body.password2;
+
+    // Console log the inputted info.
+    console.log("email: " + email + '\n' +
+        "password: " + password + '\n' +
+        "password2: " + password2);
+
+    // Validate the params
+    request.checkBody('inpEmail', 'Email is required').notEmpty();
+    request.checkBody('inpEmail', 'Email is not valid').isEmail();
+    request.checkBody('password', 'Password is required').notEmpty();
+    request.checkBody('password2', 'Passwords do not match').equals(request.body.password);
+
+    var errors = request.validationErrors();
+    if (errors) {
+        response.render('register', {
+            errors: errors
+        });
+    } else {
+        var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
+        if (inpEmail === "") return response.redirect(303, '/');
+        request.session.inpEmail = inpEmail; // add email input to session memory
+
+        console.log(inpEmail);
+
+        var dbSave = function() { // this is a callback after the captchachek
+            Unconfirmed.findOne({
+                userEmail: inpEmail,
+                password: password
+            }, '_id', function(err, user) {
+                if (err) throw err;
+                if (user) { // if email exists already, do not re-save
+                    console.log(user);
+                    if (!user.confirmed) // if email exists but is not confirmed
+                        return response.redirect(303, '/resubmit'); // redirect to FRED!! -- create resubmit page
+                    else
+                        return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
+                }
+                new Unconfirmed({ // add email to unconfirmedemails collec.
+                    userEmail: inpEmail,
+                    password: password
+                }).save();
+                if (request.session.errorMsg) delete request.session.errorMsg;
+                response.redirect(303, '/thanks');
+            });
+        };
+    }
+    /*
+      var newUser = new User({ // These values conform to schema.
+        email: email,
+        password: password
+      });
+
+      User.createUser(newUser, function() {
+        if(err) throw err;
+        console.log(user);
+      });
+      //request.flash('success_msg', 'An email has been sent to your account.');
+      //response.redirect('/login');
+      /*
+    }
+
+    /* This is the previous POST code.
     var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
     if (inpEmail === "") return response.redirect(303, '/');
     request.session.inpEmail = inpEmail; // add email input to session memory
+
+    console.log(inpEmail);
 
     var dbSave = function() { // this is a callback after the captchachek
         Unconfirmed.findOne({
@@ -76,7 +190,12 @@ app.post('/', function(request, response) {
             response.redirect(303, '/thanks');
         });
     };
-    CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
+    // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
+    */
+});
+
+app.get('/login', function(request, response) {
+    response.render('login');
 });
 
 app.get('/resubmit', function(request, response) {
@@ -95,8 +214,8 @@ app.get('/resubmit', function(request, response) {
         pgTitle: params.getPgTitle('resubmit'),
         inpEmail: inpEmail,
     });
-
 });
+
 app.get('/thanks', function(request, response) {
     var inpEmail;
     if (request.session.inpEmail) {
@@ -110,7 +229,7 @@ app.get('/thanks', function(request, response) {
         return response.redirect(303, '/');
     }
     var mailAndRender = function(idNum) {
-        emailSender.send(response, inpEmail, idNum);   // send confirmation email
+        emailSender.send(response, inpEmail, idNum); // send confirmation email
         response.render('thanks', {
             pgTitle: params.getPgTitle('thanks'),
             inpEmail: inpEmail,

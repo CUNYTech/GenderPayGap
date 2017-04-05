@@ -9,26 +9,47 @@
 </head>
 
 <body>
-    {{>navbar}}
-    {{#if flash}}
-        <div class="alert alert-{{flash.type}} alert-dismissible fade show" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                 <span aria-hidden="true">&times;</span>
-               </button>
-            <strong>{{flash.intro}}</strong> {{{flash.message}}}
+    <div class="container">
+        <div class="header clearfix">
+            <nav>
+                <ul class="nav nav-pills pull-right">
+                    <li role="presentation"><a href="/">Home</a></li>
+                    <!-- {{#if user}} If user is logged in display these-->
+                    <li role="presentation"><a href="/dashboard">Dashboard</a></li>
+                    <li role="presentation"><a href="/logout">Logout</a></li>
+                    <!-- {{else}} otherwise display these -->
+                    <li role="presentation"><a href="/login">Login</a></li>
+                    <li role="presentation"><a href="/register">Register</a></li>
+                    <!-- {{/if}} -->
+                </ul>
+            </nav>
+            <h3 class="text-muted">equalityscale.com</h3>
         </div>
-    {{/if}}
-    <article id="mainBody">
-        {{{body}}}
-    </article>
-    
-    <!-- Scripts to make bootstrap functional -->
-    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>-->
+        <!-- These messages are coming in from server -->
+        <div class="row">
+            <div class="col-lg-12">
+                {{#if success_msg}}
+                    <div class="alert alert-success">{{success_msg}}</div>
+                {{/if}}
 
+                {{#if error_msg}}
+                    <div class="alert alert-danger">{{error_msg}}</div>
+                {{/if}}
+
+                {{#if error}}
+                    <div class="alert alert-danger">{{error}}</div>
+                {{/if}}
+
+                {{{body}}}
+            </div>
+
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2017 GenderPayGap</p>
+        </footer>
+
+    </div>
 </body>
 
 </html>
