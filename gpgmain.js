@@ -15,6 +15,37 @@ app.use(require('express-session')());
 var mongoose = require('mongoose'); // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 
+var opts = {
+    server: {
+        socketOptions: {
+            keepAlive: 1
+        }
+    }
+};
+switch (app.get('env')) {
+    case 'development':
+        mongoose.connect(credentials.mongo.development.connectionString, opts);
+        break;
+    case 'production':
+        mongoose.connect(credentials.mongo.production.connectionString, opts);
+        break;
+    default:
+        throw new Error('Unknown execution environment: ' + app.get('env'));
+};
+var Unconfirmed = require('./models/unconfirmed.js'); // mongoose schema
+var Confirmed = require('./models/confirmed.js'); // mongoose schema
+
+var params = require('./lib/gpgParams.js'); // the main parameters for the site
+var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
+var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
+app.set('port', process.env.PORT || 3000);
+app.use(express.static(__dirname + '/public'));
+app.use(function(request, response, next) { // for flash error messages
+    response.locals.flash = request.session.flash;
+    delete request.session.flash;
+    next();
+});
+
 // Packages for logging in.
 var expressValidator = require('express-validator');
 var flash = require('connect-flash');
@@ -44,44 +75,12 @@ app.use(expressValidator({
     }
 }));
 
-// Global Variables For Session Logging.
+// Global Variables For Session Mesages.
 app.use(function(req, res, next) {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
     res.locals.error = req.flash('error');
     res.locals.user = req.user || null;
-    next();
-});
-
-var opts = {
-    server: {
-        socketOptions: {
-            keepAlive: 1
-        }
-    }
-};
-switch (app.get('env')) {
-    case 'development':
-        mongoose.connect(credentials.mongo.development.connectionString, opts);
-        break;
-    case 'production':
-        mongoose.connect(credentials.mongo.production.connectionString, opts);
-        break;
-    default:
-        throw new Error('Unknown execution environment: ' + app.get('env'));
-};
-var Unconfirmed = require('./models/unconfirmed.js'); // mongoose schema
-var Confirmed = require('./models/confirmed.js'); // mongoose schema
-var User = require('./models/unconfirmedUser.js'); // temporary schema.
-
-var params = require('./lib/gpgParams.js'); // the main parameters for the site
-var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
-var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
-app.set('port', process.env.PORT || 3000);
-app.use(express.static(__dirname + '/public'));
-app.use(function(request, response, next) { // for flash error messages
-    response.locals.flash = request.session.flash;
-    delete request.session.flash;
     next();
 });
 // Landing page: home, parameters of inpEmail & errorMsg coming in from form.
@@ -91,9 +90,9 @@ app.get('/', function(request, response) {
 
 app.get('/register', function(request, response) {
     response.render('register'), {
-        pgTitle: params.getPgTitle('register'),
-        inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
-        errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false
+        pgTitle: params.getPgTitle('register')
+        //inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
+        //errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false
     };
 });
 
@@ -122,58 +121,11 @@ app.post('/register', function(request, response) {
         });
     } else {
         var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
-        if (inpEmail === "") return response.redirect(303, '/');
         request.session.inpEmail = inpEmail; // add email input to session memory
 
-        console.log(inpEmail);
-
-        var dbSave = function() { // this is a callback after the captchachek
-            Unconfirmed.findOne({
-                userEmail: inpEmail,
-                password: password
-            }, '_id', function(err, user) {
-                if (err) throw err;
-                if (user) { // if email exists already, do not re-save
-                    console.log(user);
-                    if (!user.confirmed) // if email exists but is not confirmed
-                        return response.redirect(303, '/resubmit'); // redirect to FRED!! -- create resubmit page
-                    else
-                        return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
-                }
-                new Unconfirmed({ // add email to unconfirmedemails collec.
-                    userEmail: inpEmail,
-                    password: password
-                }).save();
-                if (request.session.errorMsg) delete request.session.errorMsg;
-                response.redirect(303, '/thanks');
-            });
-        };
-    }
-    /*
-      var newUser = new User({ // These values conform to schema.
-        email: email,
-        password: password
-      });
-
-      User.createUser(newUser, function() {
-        if(err) throw err;
-        console.log(user);
-      });
-      //request.flash('success_msg', 'An email has been sent to your account.');
-      //response.redirect('/login');
-      /*
-    }
-
-    /* This is the previous POST code.
-    var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
-    if (inpEmail === "") return response.redirect(303, '/');
-    request.session.inpEmail = inpEmail; // add email input to session memory
-
-    console.log(inpEmail);
-
-    var dbSave = function() { // this is a callback after the captchachek
         Unconfirmed.findOne({
-            userEmail: inpEmail
+            userEmail: inpEmail,
+            password: password
         }, '_id', function(err, user) {
             if (err) throw err;
             if (user) { // if email exists already, do not re-save
@@ -184,12 +136,18 @@ app.post('/register', function(request, response) {
                     return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
             }
             new Unconfirmed({ // add email to unconfirmedemails collec.
-                userEmail: inpEmail
+                userEmail: inpEmail,
+                password: password
             }).save();
             if (request.session.errorMsg) delete request.session.errorMsg;
+
+            request.flash('success_msg', 'An email has been sent to your account.');
             response.redirect(303, '/thanks');
         });
-    };
+    }
+
+    /* This is the previous POST code.
+
     // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
     */
 });
@@ -198,6 +156,38 @@ app.get('/login', function(request, response) {
     response.render('login');
 });
 
+passport.use(new LocalStrategy(
+    function(username, password, done) {
+        User.findOne({
+            email: inpEmail
+        }, function(err, user) {
+            if (err) {
+                return done(err);
+            }
+            if (!user) {
+                return done(null, false, {
+                    message: 'Incorrect username.'
+                });
+            }
+            if (!user.validPassword(password)) {
+                return done(null, false, {
+                    message: 'Incorrect password.'
+                });
+            }
+            return done(null, user);
+        });
+    }
+));
+
+app.post('/login',
+    passport.authenticate('local', {
+        successRedirect: '/',
+        failureRedirect: '/users/login',
+        failureFlash: true
+    }),
+    function(request, response) {
+        response.redirect('/');
+    });
 app.get('/resubmit', function(request, response) {
     var inpEmail;
     if (request.session.inpEmail) {
@@ -249,7 +239,7 @@ app.get('/thanks', function(request, response) {
     }
 });
 app.get('/confirm', function(request, response) { // Fred - add referrer page restriction to disable back button
-    var unconfE;
+    var unconfE; // w8 what? how does this get initialized with anything? <:o
     if (request.query.unconfE)
         unconfE = request.query.unconfE; // id comes from GET request, if not, redirect to home page
     else
@@ -261,7 +251,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
         if (dbEmail.confirmed) { // if id is unconfirmed, send to resubmit page (create it)
             request.session.confE = unconfE;
-            return response.redirect(303, '/returnuser'); // change to resubmit page (once created)
+            return response.redirect(303, '/resubmit'); // I changed to /resubmit -- Nicholas
         }
         dbEmail.confirmed = true; // set email in unconfirmedemail as confirmed
         dbEmail.save(function(err) {
@@ -275,7 +265,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
             if (err) throw err;
             Confirmed.findOne({
                 email: dbEmail.userEmail
-            }, '_id', function(err, user) { //THIS SHOULD BE A PROMISE!!!!!
+            }, '_id', function(err, user) { // THIS SHOULD BE A PROMISE!!!!!
                 if (err) throw err;
                 request.session.surveyId = user._id; // this is the new id number in Confirmed, add to session mem for dosurvey
                 delete request.session.unconfE;
@@ -288,6 +278,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         });
     });
 });
+
 app.get('/dosurvey', function(request, response) { // Fred - add referrer page restriction to disable back button
     var surveyId;
     if (request.session.surveyId)
