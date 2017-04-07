@@ -5,11 +5,9 @@ GenderPayGap
 ## We were able to obtain our data, based on these charts http://developer.dol.gov/expanding-growth/bls-occupational-employment-statistics-survey-oes#OE_FOOTNOTE
 
 ### Install these packages to allow the project to run properly:  
-1. ` npm install express`
-2.  `npm install express3-handlebars`
-3.  `npm install body-parser`
+1. ` npm install` - This will scan the package.json file and install all dependencies listed. 
+2. 'node gpgmain.js' - This will have node run our application. And to view the project go to your preferential browser and type in: 'localhost:3000'.
 
-After, you should do `node gpgmain.js` to have Node execute our JS file. Then you
-should open up your preferential web browser and type in: `localhost:3000` to run
-the web app locally.
+### To install a new module to our project
+You need to do: "npm install --save [module-name]' and that will place the package in our 'package.json' file.
 
