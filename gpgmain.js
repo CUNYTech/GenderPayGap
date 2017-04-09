@@ -148,7 +148,7 @@ app.get('/thanks', function(request, response) {
     //         mailAndRender(user._id);
     //     });
     // }
-    }
+    //}
 
    if (!request.session.inpEmail) {
       return response.session.redirect(303, '/register');
