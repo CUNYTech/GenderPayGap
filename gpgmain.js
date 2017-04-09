@@ -37,6 +37,11 @@ var Confirmed = require('./models/confirmed.js'); // mongoose schema
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
 var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
 var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
+// var empArea = require('./API-DATASET/OE_AREA.js');
+// var empOccp = require('./API-DATASET/OE_OCCUPATION.js');
+// var series = require('./API-DATASET/OE_SERIES.js');
+// var wage = require('./API-DATASET/OE_DATA_PUB.js');
+
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 app.use(function(request, response, next) { // for flash error messages
@@ -350,8 +355,9 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         // if there is no record, or the record has no email address, reject, send home
         if (!user || !user.email) return response.redirect(303, '/');
         inpForm.email = user.email;
-        for (var i = 1; i < params.allFieldsMap.length; i++) { // start at index 1 since email (index 0) is already there.
-            user[params.allFieldsMap[i]] = inpForm[params.allFieldsMap[i]];
+
+        for (var i = 1; i < params.getAllFieldsLen(); i++) { // start at index 1 since email (index 0) is already there.
+            user[params.getAllFieldsMap(i)] = inpForm[params.getAllFieldsMap(i)];
         }
         user.save(function(err) {
             if (err) throw (err);
@@ -360,6 +366,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
             response.redirect(303, '/shosurvey');
         });
     });
+
 });
 
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
@@ -367,12 +374,13 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         response.redirect(303, '/');
     }
     var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
+    
     response.render('shosurvey', {
         pgTitle: params.getPgTitle('shosurvey'),
         dispForm: dispForm
     });
 
-    // Your time to shine right here Billy Billzzz!  
+    
 });
 
 
