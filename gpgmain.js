@@ -109,25 +109,43 @@ app.get('/thanks', function(request, response) {
         };
         return response.redirect(303, '/');
     }
-    var mailAndRender = function(idNum) {
-        emailSender.send(response, inpEmail, idNum);   // send confirmation email
-        response.render('thanks', {
-            pgTitle: params.getPgTitle('thanks'),
-            inpEmail: inpEmail,
+
+
+
+    //added 4.8.17 should be removed later on
+    response.render('dosurvey', {
+            pgTitle: params.getPgTitle('dosurvey'),
+            //conEmail: user.email,
+            params: params,
+            inpForm: (request.session.inpForm) ? inpForm : false, //params for if SS validation sees a problem
+            alarm: (request.session.alarm) ? alarm : false // this is for error code - serverside validation
         });
-    };
-    if (request.session.dbENum) {
-        mailAndRender(request.session.dbENum);
-    } else {
-        Unconfirmed.findOne({
-            userEmail: request.session.inpEmail
-        }, '_id', function(err, user) { //get id of email input
-            if (!user) {
-                return response.redirect(303, '/');
-            }
-            mailAndRender(user._id);
-        });
-    }
+
+
+
+/* COMMENTED OUT SMTP, after enters an email, the will be directed to the form page. I added the response.render('dosurvey')
+	page up top ^^^^^, should be removed before the site goes live */ 
+
+
+    // var mailAndRender = function(idNum) {
+    //     emailSender.send(response, inpEmail, idNum);   // send confirmation email
+    //     response.render('thanks', {
+    //         pgTitle: params.getPgTitle('thanks'),
+    //         inpEmail: inpEmail,
+    //     });
+    // };
+    // if (request.session.dbENum) {
+    //     mailAndRender(request.session.dbENum);
+    // } else {
+    //     Unconfirmed.findOne({
+    //         userEmail: request.session.inpEmail
+    //     }, '_id', function(err, user) { //get id of email input
+    //         if (!user) {
+    //             return response.redirect(303, '/');
+    //         }
+    //         mailAndRender(user._id);
+    //     });
+    // }
 });
 app.get('/confirm', function(request, response) { // Fred - add referrer page restriction to disable back button
     var unconfE;
@@ -188,6 +206,7 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
         });
     });
 });
+
 app.post('/prosurvey', function(request, response) { //this function processes the form data, it does not render a page
     var surveyId;
     if (request.session.surveyId)
@@ -203,7 +222,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
         passThru = (request.body[params.getReqField(i)] != ""); // if required fields are empty, do not passThru
     }
-    if (!passThru) {
+    if (!passThru) { //if the required fields are not filled out, have the user redo the form
         request.session.inpForm = inpForm;
         request.session.alarm = true;
         return response.redirect(303, '/dosurvey');
@@ -229,6 +248,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         });
     });
 });
+
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
     if (!request.session.dispForm) {
         response.redirect(303, '/');
@@ -239,6 +259,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         dispForm: dispForm
     });
 });
+
+
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
     response.render('returnuser', {
         pgTitle: params.getPgTitle('returnuser'),
