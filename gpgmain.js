@@ -187,7 +187,7 @@ app.post('/login',
     });
 
 app.get('/resubmit', function(request, response) {
-   
+
     var inpEmail;
     if (request.session.inpEmail) {
         inpEmail = request.session.inpEmail;
@@ -207,7 +207,7 @@ app.get('/resubmit', function(request, response) {
 
 app.get('/thanks', function(request, response) {
     /*  // Code for mail SMTP. I'm commenting this out for now so that we can get
-        // unconfirmed users into the db with the new Schema. 
+        // unconfirmed users into the db with the new Schema.
         var inpEmail;
         if (request.session.inpEmail) {
             inpEmail = request.session.inpEmail;
@@ -267,7 +267,9 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
     Unconfirmed.findById(unconfE, function(err, dbEmail) {
         if (err) throw (err);
         // if there is no record, or the record has no email address, reject, send home
-        if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
+        if (!dbEmail || !dbEmail.userEmail) {
+          return response.redirect(303, '/home');
+        }
         if (dbEmail.confirmed) { // if id is unconfirmed, send to resubmit page (create it)
             request.session.confE = unconfE;
             return response.redirect(303, '/resubmit'); // I changed to /resubmit -- Nicholas
@@ -278,7 +280,8 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         });
 
         var newUser = new Confirmed({ // create new entry in confirmedemail collection
-            email: dbEmail.userEmail
+            email: dbEmail.userEmail, 
+            password: dbEmail.password // Testing to see if this works
         });
         newUser.save(function(err) {
             if (err) throw err;
@@ -369,7 +372,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         dispForm: dispForm
     });
 
-    // Your time to shine right here Billy Billzzz!  
+    // Your time to shine right here Billy Billzzz!
 });
 
 

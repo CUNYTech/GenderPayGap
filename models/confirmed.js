@@ -6,7 +6,8 @@ var schema = {
         type: Date,
         default: Date.now
     },
-    surveyDate: Date
+    surveyDate: Date,
+    password: 'String'
 };
 for (i = 0; i < params.allFieldsMap.length; i++) {              // not sure why getter methods not working - gpgParams.js
     schema[params.allFieldsMap[i]] = params.allFieldsType[i];
