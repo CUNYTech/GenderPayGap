@@ -80,6 +80,7 @@ app.post('/', function(request, response) {
 });
 
 app.get('/resubmit', function(request, response) {
+   
     var inpEmail;
     if (request.session.inpEmail) {
         inpEmail = request.session.inpEmail;
@@ -98,6 +99,7 @@ app.get('/resubmit', function(request, response) {
 
 });
 app.get('/thanks', function(request, response) {
+   /*
     var inpEmail;
     if (request.session.inpEmail) {
         inpEmail = request.session.inpEmail;
@@ -146,7 +148,25 @@ app.get('/thanks', function(request, response) {
     //         mailAndRender(user._id);
     //     });
     // }
+    }
+
+   if (!request.session.inpEmail) {
+      return response.session.redirect(303, '/register');
+   }
+   Unconfirmed.findOne({
+      userEmail: request.session.inpEmail
+   }, '_id', function(err, user) {
+      if (!user) {
+         return response.redirect(303, '/register');
+      }
+      response.render('thanks', {
+         pgTitle: params.getPgTitle('thanks'),
+         inpEmail: request.session.inpEmail,
+         dbENum: user._id
+      }); 
+   }); 
 });
+
 app.get('/confirm', function(request, response) { // Fred - add referrer page restriction to disable back button
     var unconfE;
     if (request.query.unconfE)
