@@ -1,5 +1,4 @@
 /* Fred - create an email resubmit page (for people who don't confirm email right away but email is in our db), set up and error page*/
-
 var express = require('express');
 var app = express();
 var handlebars = require('express3-handlebars').create({
@@ -7,12 +6,14 @@ var handlebars = require('express3-handlebars').create({
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
+
 app.use(require('body-parser')());
 var credentials = require('./credentials.js'); // remember to set your credentials.js file
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
 var mongoose = require('mongoose'); // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
+
 var opts = {
     server: {
         socketOptions: {
@@ -35,7 +36,7 @@ var Confirmed = require('./models/confirmed.js'); // mongoose schema
 
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
 var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
-var emailSender = require('./lib/gpgEmailer.js')(credentials);  // emailer utilities here
+var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 app.use(function(request, response, next) { // for flash error messages
@@ -43,23 +44,86 @@ app.use(function(request, response, next) { // for flash error messages
     delete request.session.flash;
     next();
 });
-// page display and get/post functions
-app.get('/', function(request, response) {
-    response.render('home', {
-        pgTitle: params.getPgTitle('home'),
-        inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
-        errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false,
-        addCaptcha: true
-    });
-});
-app.post('/', function(request, response) {
-    var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
-    if (inpEmail === "") return response.redirect(303, '/');
-    request.session.inpEmail = inpEmail; // add email input to session memory
 
-    var dbSave = function() { // this is a callback after the captchachek
+// Packages for logging in.
+var expressValidator = require('express-validator');
+var flash = require('connect-flash');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+
+// Express Validator
+app.use(expressValidator({
+    errorFormatter: function(param, msg, value) {
+        var namespace = param.split('.'),
+            root = namespace.shift(),
+            formParam = root;
+
+        while (namespace.length) {
+            formParam += '[' + namespace.shift() + ']';
+        }
+        return {
+            param: formParam,
+            msg: msg,
+            value: value
+        };
+    }
+}));
+
+// Global Variables For Session Mesages.
+app.use(function(req, res, next) {
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    res.locals.error = req.flash('error');
+    res.locals.user = req.user || null;
+    next();
+});
+// Landing page: home, parameters of inpEmail & errorMsg coming in from form.
+app.get('/', function(request, response) {
+    response.render('home');
+});
+
+app.get('/register', function(request, response) {
+    response.render('register'), {
+        pgTitle: params.getPgTitle('register')
+        //inpEmail: (request.session.inpEmail) ? request.session.inpEmail : false,
+        //errorMsg: (request.session.errorMsg) ? request.session.errorMsg : false
+    };
+});
+
+app.post('/register', function(request, response) {
+    // save inputted variables in post request here.
+    var email = request.body.inpEmail,
+        password = request.body.password,
+        password2 = request.body.password2;
+
+    // Console log the inputted info.
+    console.log("email: " + email + '\n' +
+        "password: " + password + '\n' +
+        "password2: " + password2);
+
+    // Validate the params
+    request.checkBody('inpEmail', 'Email is required').notEmpty();
+    request.checkBody('inpEmail', 'Email is not valid').isEmail();
+    request.checkBody('password', 'Password is required').notEmpty();
+    request.checkBody('password2', 'Passwords do not match').equals(request.body.password);
+
+    var errors = request.validationErrors();
+    if (errors) {
+        response.render('register', {
+            errors: errors
+        });
+    } else {
+        var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
+        request.session.inpEmail = inpEmail; // add email input to session memory
+
         Unconfirmed.findOne({
-            userEmail: inpEmail
+            userEmail: inpEmail,
+            password: password
         }, '_id', function(err, user) {
             if (err) throw err;
             if (user) { // if email exists already, do not re-save
@@ -70,14 +134,57 @@ app.post('/', function(request, response) {
                     return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
             }
             new Unconfirmed({ // add email to unconfirmedemails collec.
-                userEmail: inpEmail
+                userEmail: inpEmail,
+                password: password
             }).save();
             if (request.session.errorMsg) delete request.session.errorMsg;
+
+            request.flash('success_msg', 'An email has been sent to your account.');
             response.redirect(303, '/thanks');
         });
-    };
-    CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
+    }
+
+    // Captcha was removed to make POST request again.
+    // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
+
 });
+
+app.get('/login', function(request, response) {
+    response.render('login');
+});
+
+// Initialize passport for session logging here.
+passport.use(new LocalStrategy(
+    function(username, password, done) {
+        Confirmed.getUserByEmail(email, function(err, email) {
+            if (err) throw err;
+            if (!email) {
+                return done(null, false, {
+                    message: 'Unknown email'
+                });
+            }
+            /* //This is commented out for now since most confirmed users don't have PWs.
+            Confirmed.comparePassword(password, Confirmed.password, function(err, isMatch) {
+              if(err) throw err;
+              if(isMatch){
+                return done(null, Confirmed);
+              } else {
+                return done(null, user, {message: 'Invalid password'});
+              }
+            });
+            */
+        });
+    }));
+
+app.post('/login',
+    passport.authenticate('local', {
+        successRedirect: '/',
+        failureRedirect: 'login',
+        failureFlash: true
+    }),
+    function(request, response) {
+        response.redirect('/');
+    });
 
 app.get('/resubmit', function(request, response) {
    
@@ -96,91 +203,75 @@ app.get('/resubmit', function(request, response) {
         pgTitle: params.getPgTitle('resubmit'),
         inpEmail: inpEmail,
     });
-
 });
+
 app.get('/thanks', function(request, response) {
-   /*
-    var inpEmail;
-    if (request.session.inpEmail) {
-        inpEmail = request.session.inpEmail;
-    } else {
-        request.session.flash = {
-            type: 'warning',
-            intro: 'Internal Error',
-            message: 'An error occured. Please start over.',
+    /*  // Code for mail SMTP. I'm commenting this out for now so that we can get
+        // unconfirmed users into the db with the new Schema. 
+        var inpEmail;
+        if (request.session.inpEmail) {
+            inpEmail = request.session.inpEmail;
+        } else {
+            request.session.flash = {
+                type: 'warning',
+                intro: 'Internal Error',
+                message: 'An error occured. Please start over.',
+            };
+            return response.redirect(303, '/');
+        }
+        var mailAndRender = function(idNum) {
+            emailSender.send(response, inpEmail, idNum); // send confirmation email
+            response.render('thanks', {
+                pgTitle: params.getPgTitle('thanks'),
+                inpEmail: inpEmail,
+            });
         };
-        return response.redirect(303, '/');
+        if (request.session.dbENum) {
+            mailAndRender(request.session.dbENum);
+        } else {
+            Unconfirmed.findOne({
+                userEmail: request.session.inpEmail
+            }, '_id', function(err, user) { //get id of email input
+                if (!user) {
+                    return response.redirect(303, '/');
+                }
+                mailAndRender(user._id);
+            });
+        }
+    */
+    if (!request.session.inpEmail) {
+        return response.session.redirect(303, '/register');
     }
 
-
-
-    //added 4.8.17 should be removed later on
-    response.render('dosurvey', {
-            pgTitle: params.getPgTitle('dosurvey'),
-            //conEmail: user.email,
-            params: params,
-            inpForm: (request.session.inpForm) ? inpForm : false, //params for if SS validation sees a problem
-            alarm: (request.session.alarm) ? alarm : false // this is for error code - serverside validation
+    Unconfirmed.findOne({
+        userEmail: request.session.inpEmail
+    }, '_id', function(err, user) {
+        // Retrieve the id of the inputted email.
+        if (!user) {
+            return response.redirect(303, '/register');
+        }
+        response.render('thanks', {
+            pgTitle: params.getPgTitle('thanks'),
+            inpEmail: request.session.inpEmail,
+            dbENum: user._id
         });
-
-
-
-/* COMMENTED OUT SMTP, after enters an email, the will be directed to the form page. I added the response.render('dosurvey')
-	page up top ^^^^^, should be removed before the site goes live */ 
-
-
-    // var mailAndRender = function(idNum) {
-    //     emailSender.send(response, inpEmail, idNum);   // send confirmation email
-    //     response.render('thanks', {
-    //         pgTitle: params.getPgTitle('thanks'),
-    //         inpEmail: inpEmail,
-    //     });
-    // };
-    // if (request.session.dbENum) {
-    //     mailAndRender(request.session.dbENum);
-    // } else {
-    //     Unconfirmed.findOne({
-    //         userEmail: request.session.inpEmail
-    //     }, '_id', function(err, user) { //get id of email input
-    //         if (!user) {
-    //             return response.redirect(303, '/');
-    //         }
-    //         mailAndRender(user._id);
-    //     });
-    // }
-    //}
-
-   if (!request.session.inpEmail) {
-      return response.session.redirect(303, '/register');
-   }
-   Unconfirmed.findOne({
-      userEmail: request.session.inpEmail
-   }, '_id', function(err, user) {
-      if (!user) {
-         return response.redirect(303, '/register');
-      }
-      response.render('thanks', {
-         pgTitle: params.getPgTitle('thanks'),
-         inpEmail: request.session.inpEmail,
-         dbENum: user._id
-      }); 
-   }); 
+    });
 });
 
 app.get('/confirm', function(request, response) { // Fred - add referrer page restriction to disable back button
     var unconfE;
-    if (request.query.unconfE)
+    if (request.query.unconfE) {
         unconfE = request.query.unconfE; // id comes from GET request, if not, redirect to home page
-    else
+    } else {
         return response.redirect(303, '/'); //FRED - create error page fo
-
+    }
     Unconfirmed.findById(unconfE, function(err, dbEmail) {
         if (err) throw (err);
         // if there is no record, or the record has no email address, reject, send home
         if (!dbEmail || !dbEmail.userEmail) return response.redirect(303, '/');
         if (dbEmail.confirmed) { // if id is unconfirmed, send to resubmit page (create it)
             request.session.confE = unconfE;
-            return response.redirect(303, '/returnuser'); // change to resubmit page (once created)
+            return response.redirect(303, '/resubmit'); // I changed to /resubmit -- Nicholas
         }
         dbEmail.confirmed = true; // set email in unconfirmedemail as confirmed
         dbEmail.save(function(err) {
@@ -194,7 +285,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
             if (err) throw err;
             Confirmed.findOne({
                 email: dbEmail.userEmail
-            }, '_id', function(err, user) { //THIS SHOULD BE A PROMISE!!!!!
+            }, '_id', function(err, user) { // THIS SHOULD BE A PROMISE!!!!!
                 if (err) throw err;
                 request.session.surveyId = user._id; // this is the new id number in Confirmed, add to session mem for dosurvey
                 delete request.session.unconfE;
@@ -207,12 +298,14 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         });
     });
 });
+
 app.get('/dosurvey', function(request, response) { // Fred - add referrer page restriction to disable back button
     var surveyId;
     if (request.session.surveyId)
         surveyId = request.session.surveyId;
     else
         return response.redirect(303, '/');
+
     Confirmed.findById(surveyId, function(err, user) {
         if (err) console.log(err);
         // if there is no record, or the record has no email address, reject, send home
@@ -278,6 +371,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         pgTitle: params.getPgTitle('shosurvey'),
         dispForm: dispForm
     });
+
+    // Your time to shine right here Billy Billzzz!  
 });
 
 

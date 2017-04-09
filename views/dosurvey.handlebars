@@ -17,7 +17,7 @@
                         {{#each params.getAgeRange}}              {{! interesting you don't reference these by the method, just the name }}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
@@ -28,7 +28,7 @@
                         {{#each params.getGender}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
@@ -45,7 +45,7 @@
                         {{#each params.getEmpState}}
                             <option value="{{@key}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
@@ -62,7 +62,7 @@
                         {{#each params.getEmpDuration}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
@@ -73,15 +73,15 @@
                         {{#each params.getEmpSalary}}
                             <option value="{{@index}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
                 <div class="fmLbl">Your name:</div>
                 <div class="fmInp">
-                    <input id="userName" name="userName" type="text" size="25" autofocus >
+                    <input id="userName" name="userName" type="text" size="25" autofocus>
                 </div>
-            </div>    
+            </div>
             <div class="frmRw">
                 <div class="fmLbl">Your race/ethnicity:</div>
                 <div class="fmInp">
@@ -90,7 +90,7 @@
                         {{#each params.getEthnicity}}
                             <option value="{{this}}">{{this}}</option>
                         {{/each}}
-                    </select>        
+                    </select>
                 </div>
             </div>
             <button id="btnEmail" type="submit">Submit</button>
