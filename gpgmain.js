@@ -1,5 +1,4 @@
 /* Fred - create an email resubmit page (for people who don't confirm email right away but email is in our db), set up and error page*/
-
 var express = require('express');
 var app = express();
 var handlebars = require('express3-handlebars').create({
@@ -96,7 +95,6 @@ app.get('/register', function(request, response) {
     };
 });
 
-
 app.post('/register', function(request, response) {
     // save inputted variables in post request here.
     var email = request.body.inpEmail,
@@ -146,48 +144,48 @@ app.post('/register', function(request, response) {
         });
     }
 
-    /* This is the previous POST code.
-
+    // Captcha was removed to make POST request again.
     // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
-    */
+
 });
 
 app.get('/login', function(request, response) {
     response.render('login');
 });
 
+// Initialize passport for session logging here.
 passport.use(new LocalStrategy(
     function(username, password, done) {
-        User.findOne({
-            email: inpEmail
-        }, function(err, user) {
-            if (err) {
-                return done(err);
-            }
-            if (!user) {
+        Confirmed.getUserByEmail(email, function(err, email) {
+            if (err) throw err;
+            if (!email) {
                 return done(null, false, {
-                    message: 'Incorrect username.'
+                    message: 'Unknown email'
                 });
             }
-            if (!user.validPassword(password)) {
-                return done(null, false, {
-                    message: 'Incorrect password.'
-                });
-            }
-            return done(null, user);
+            /* //This is commented out for now since most confirmed users don't have PWs.
+            Confirmed.comparePassword(password, Confirmed.password, function(err, isMatch) {
+              if(err) throw err;
+              if(isMatch){
+                return done(null, Confirmed);
+              } else {
+                return done(null, user, {message: 'Invalid password'});
+              }
+            });
+            */
         });
-    }
-));
+    }));
 
 app.post('/login',
     passport.authenticate('local', {
         successRedirect: '/',
-        failureRedirect: '/users/login',
+        failureRedirect: 'login',
         failureFlash: true
     }),
     function(request, response) {
         response.redirect('/');
     });
+
 app.get('/resubmit', function(request, response) {
     var inpEmail;
     if (request.session.inpEmail) {
@@ -207,44 +205,63 @@ app.get('/resubmit', function(request, response) {
 });
 
 app.get('/thanks', function(request, response) {
-    var inpEmail;
-    if (request.session.inpEmail) {
-        inpEmail = request.session.inpEmail;
-    } else {
-        request.session.flash = {
-            type: 'warning',
-            intro: 'Internal Error',
-            message: 'An error occured. Please start over.',
+    /*  // Coe for mail SMTP. I'm commenting this out for now so that we can get
+        // unconfirmed users into the db with the new Schema. 
+        var inpEmail;
+        if (request.session.inpEmail) {
+            inpEmail = request.session.inpEmail;
+        } else {
+            request.session.flash = {
+                type: 'warning',
+                intro: 'Internal Error',
+                message: 'An error occured. Please start over.',
+            };
+            return response.redirect(303, '/');
+        }
+        var mailAndRender = function(idNum) {
+            emailSender.send(response, inpEmail, idNum); // send confirmation email
+            response.render('thanks', {
+                pgTitle: params.getPgTitle('thanks'),
+                inpEmail: inpEmail,
+            });
         };
-        return response.redirect(303, '/');
+        if (request.session.dbENum) {
+            mailAndRender(request.session.dbENum);
+        } else {
+            Unconfirmed.findOne({
+                userEmail: request.session.inpEmail
+            }, '_id', function(err, user) { //get id of email input
+                if (!user) {
+                    return response.redirect(303, '/');
+                }
+                mailAndRender(user._id);
+            });
+        }
+    */
+    if (!request.session.inpEmail) {
+        return response.session.redirect(303, '/register');
     }
-    var mailAndRender = function(idNum) {
-        emailSender.send(response, inpEmail, idNum); // send confirmation email
+    Unconfirmed.findOne({
+        userEmail: request.session.inpEmail
+    }, '_id', function(err, user) {
+        // Retrieve the id of the inputted email.
+        if (!user) {
+            return response.redirect(303, '/register');
+        }
         response.render('thanks', {
             pgTitle: params.getPgTitle('thanks'),
-            inpEmail: inpEmail,
+            inpEmail: request.session.inpEmail,
+            dbENum: user._id
         });
-    };
-    if (request.session.dbENum) {
-        mailAndRender(request.session.dbENum);
-    } else {
-        Unconfirmed.findOne({
-            userEmail: request.session.inpEmail
-        }, '_id', function(err, user) { //get id of email input
-            if (!user) {
-                return response.redirect(303, '/');
-            }
-            mailAndRender(user._id);
-        });
-    }
+    });
 });
 app.get('/confirm', function(request, response) { // Fred - add referrer page restriction to disable back button
-    var unconfE; // w8 what? how does this get initialized with anything? <:o
-    if (request.query.unconfE)
+    var unconfE;
+    if (request.query.unconfE) {
         unconfE = request.query.unconfE; // id comes from GET request, if not, redirect to home page
-    else
+    } else {
         return response.redirect(303, '/'); //FRED - create error page fo
-
+    }
     Unconfirmed.findById(unconfE, function(err, dbEmail) {
         if (err) throw (err);
         // if there is no record, or the record has no email address, reject, send home
@@ -285,6 +302,7 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
         surveyId = request.session.surveyId;
     else
         return response.redirect(303, '/');
+
     Confirmed.findById(surveyId, function(err, user) {
         if (err) console.log(err);
         // if there is no record, or the record has no email address, reject, send home
@@ -348,7 +366,11 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         pgTitle: params.getPgTitle('shosurvey'),
         dispForm: dispForm
     });
+
+    // Your time to shine right here Billy Billzzz!  
 });
+
+
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
     response.render('returnuser', {
         pgTitle: params.getPgTitle('returnuser'),
