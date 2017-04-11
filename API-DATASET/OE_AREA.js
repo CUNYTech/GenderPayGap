@@ -21,7 +21,7 @@ var options = {
 
 
 console.log("Start");
-var x = http.request(options,function(res){
+var x = http.request(options,function(res) {
     console.log("Connected");
     //source: http://stackoverflow.com/questions/11826384/calling-a-json-api-with-node-js
     var str = '';
