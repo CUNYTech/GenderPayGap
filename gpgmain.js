@@ -187,7 +187,7 @@ app.post('/login',
     });
 
 app.get('/resubmit', function(request, response) {
-   
+
     var inpEmail;
     if (request.session.inpEmail) {
         inpEmail = request.session.inpEmail;
@@ -207,7 +207,7 @@ app.get('/resubmit', function(request, response) {
 
 app.get('/thanks', function(request, response) {
     /*  // Code for mail SMTP. I'm commenting this out for now so that we can get
-        // unconfirmed users into the db with the new Schema. 
+        // unconfirmed users into the db with the new Schema.
         var inpEmail;
         if (request.session.inpEmail) {
             inpEmail = request.session.inpEmail;
@@ -369,7 +369,13 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         dispForm: dispForm
     });
 
-    // Your time to shine right here Billy Billzzz!  
+    // Your time to shine right here Billy Billzzz!
+    // Extract state value from dispForm.
+    for(var i=0; i < dispForm.length; i++) {
+      console.log(params.allFieldsMap[i]);
+    }
+
+
 });
 
 
