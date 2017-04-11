@@ -4,13 +4,21 @@ var app = express();
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main'
 });
+var bodyParser = require('body-parser');
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-app.use(require('body-parser')());
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+app.use(bodyParser.json());
 var credentials = require('./credentials.js'); // remember to set your credentials.js file
 app.use(require('cookie-parser')(credentials.cookieSecret));
-app.use(require('express-session')());
+app.use(require('express-session')({
+    secret: 'CREAM', // Wu Tang!
+    resave: false,
+    saveUninitialized: true
+}));
 var mongoose = require('mongoose'); // mongoose connection and schema builders
 mongoose.Promise = global.Promise;
 
@@ -49,7 +57,8 @@ app.use(function(request, response, next) { // for flash error messages
 var expressValidator = require('express-validator');
 var flash = require('connect-flash');
 var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
+var Strategy = require('passport-http').BasicStrategy;
+var bcrypt = require('bcryptjs');
 
 // Initialize passport
 app.use(passport.initialize());
@@ -95,6 +104,8 @@ app.get('/register', function(request, response) {
     };
 });
 
+
+
 app.post('/register', function(request, response) {
     // save inputted variables in post request here.
     var email = request.body.inpEmail,
@@ -122,8 +133,7 @@ app.post('/register', function(request, response) {
         request.session.inpEmail = inpEmail; // add email input to session memory
 
         Unconfirmed.findOne({
-            userEmail: inpEmail,
-            password: password
+            userEmail: inpEmail
         }, '_id', function(err, user) {
             if (err) throw err;
             if (user) { // if email exists already, do not re-save
@@ -133,17 +143,25 @@ app.post('/register', function(request, response) {
                 else
                     return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
             }
-            new Unconfirmed({ // add email to unconfirmedemails collec.
-                userEmail: inpEmail,
-                password: password
-            }).save();
-            if (request.session.errorMsg) delete request.session.errorMsg;
+            bcrypt.genSalt(10, function(err, salt) {
+                bcrypt.hash(password, salt, function(err, hash) {
+                    var newUser = {
+                        userEmail: inpEmail,
+                        password: hash // Insert the hashed password.
+                    };
+                    console.log('pw-encrypted: ' + hash);
+                    console.log(user); 
+                    new Unconfirmed({ // add email to unconfirmedemails collec.
+                        newUser // Send encrypted credentials to the db.
+                    }).save();
 
+                });
+            });
+            if (request.session.errorMsg) delete request.session.errorMsg;
             request.flash('success_msg', 'An email has been sent to your account.');
             response.redirect(303, '/thanks');
         });
     }
-
     // Captcha was removed to make POST request again.
     // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
 
@@ -154,33 +172,49 @@ app.get('/login', function(request, response) {
 });
 
 // Initialize passport for session logging here.
-passport.use(new LocalStrategy(
-    function(username, password, done) {
+passport.use(new Strategy(
+    function(email, password, done) {
         Confirmed.getUserByEmail(email, function(err, email) {
-            if (err) throw err;
+            if (err) {
+                return done(err);
+            }
             if (!email) {
                 return done(null, false, {
                     message: 'Unknown email'
                 });
             }
-            /* //This is commented out for now since most confirmed users don't have PWs.
+            //This is commented out for now since most confirmed users don't have PWs.
             Confirmed.comparePassword(password, Confirmed.password, function(err, isMatch) {
-              if(err) throw err;
-              if(isMatch){
-                return done(null, Confirmed);
-              } else {
-                return done(null, user, {message: 'Invalid password'});
-              }
+                if (err) throw err;
+                if (isMatch) {
+                    return done(null, Confirmed);
+                } else {
+                    return done(null, false, {
+                        message: 'Invalid password'
+                    });
+                }
             });
-            */
+
         });
     }));
 
+passport.serializeUser(function(user, done) {
+    done(null, user.id);
+})
+
+passport.deserializeUser(function(id, done) {
+    Confirmed.getUserById(id, function(err, user) {
+        done(err, user);
+    });
+});
+
+
 app.post('/login',
-    passport.authenticate('local', {
+    passport.authenticate('basic', {
         successRedirect: '/',
         failureRedirect: 'login',
-        failureFlash: true
+        failureFlash: true,
+        session: false
     }),
     function(request, response) {
         response.redirect('/');
@@ -268,7 +302,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         if (err) throw (err);
         // if there is no record, or the record has no email address, reject, send home
         if (!dbEmail || !dbEmail.userEmail) {
-          return response.redirect(303, '/home');
+            return response.redirect(303, '/home');
         }
         if (dbEmail.confirmed) { // if id is unconfirmed, send to resubmit page (create it)
             request.session.confE = unconfE;
@@ -280,7 +314,7 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
         });
 
         var newUser = new Confirmed({ // create new entry in confirmedemail collection
-            email: dbEmail.userEmail, 
+            email: dbEmail.userEmail,
             password: dbEmail.password // Testing to see if this works
         });
         newUser.save(function(err) {
