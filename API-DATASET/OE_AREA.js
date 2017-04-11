@@ -21,29 +21,29 @@ var options = {
 
 
 console.log("Start");
-var x = http.request(options,function(res) {
+var x = http.request(options, function(res) {
     console.log("Connected");
     //source: http://stackoverflow.com/questions/11826384/calling-a-json-api-with-node-js
     var str = '';
     res.on('data', function(chunk) {
         str += chunk;
     });
-    res.on('data',function(data){
+    res.on('data',function(data) {
        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-        if(res.statusCode == 200){
-            try{
+        if(res.statusCode == 200) {
+            try {
                 var data = JSON.parse(str);
                 var state = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                 array.push(state);
                 console.log(state);
-            }catch(e){
+            } catch(e) {
                 console.log('Error parsing JSON');
             }
         }
         //console.log(data.toString());
     });
 });
-exports.getArea = function(areaCode){
+exports.getArea = function(areaCode) {
     return array[areaCode];
     console.log('Returning area code');
 }
