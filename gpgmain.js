@@ -83,7 +83,7 @@ app.use(expressValidator({
     }
 }));
 
-console.log(params.matchStateByAbb("FL")); // Proff that it works! 
+console.log(params.matchStateByAbb("FL")); // Proff that it works!
 
 
 
@@ -444,46 +444,48 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     //     console.log('Returning area code');
     // }
     x.end();
-console.log(JOBTITLE);
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'";
-var encode = encodeURI(realmStatus);
+    console.log(JOBTITLE);
+    var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'";
+    var encode = encodeURI(realmStatus);
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
 
 
-var options = {
+    var options = {
         host: 'api.dol.gov',
         path: encode,
         type: 'GET',
         dataType: 'json',
-        headers: {'accept' : 'application/json'}
+        headers: {
+            'accept': 'application/json'
+        }
     };
 
 
 
-console.log("Start");
-var x = http.request(options,function(res){
-    console.log("Connected");
-     var str = '';
-    res.on('data', function(chunk) {
-        str += chunk;
-    });
-    res.on('data',function(data){
-        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-        if(res.statusCode == 200){
-            try{
-                var data = JSON.parse(str);
-                var occupationNum = data.d.results[0].OCCUPATION_CODE;
-                array.push(occupationNum);
-                console.log(occupationNum);
-            }catch(e){
-                console.log('Error parsing JSON');
+    console.log("Start");
+    var x = http.request(options, function(res) {
+        console.log("Connected");
+        var str = '';
+        res.on('data', function(chunk) {
+            str += chunk;
+        });
+        res.on('data', function(data) {
+            //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+            if (res.statusCode == 200) {
+                try {
+                    var data = JSON.parse(str);
+                    var occupationNum = data.d.results[0].OCCUPATION_CODE;
+                    array.push(occupationNum);
+                    console.log(occupationNum);
+                } catch (e) {
+                    console.log('Error parsing JSON');
+                }
             }
-        }
+        });
     });
-});
 
-x.end();
+    x.end();
 });
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
