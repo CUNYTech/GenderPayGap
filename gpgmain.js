@@ -37,6 +37,11 @@ var Confirmed = require('./models/confirmed.js'); // mongoose schema
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
 var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
 var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
+// var empArea = require('./API-DATASET/OE_AREA.js');
+// var empOccp = require('./API-DATASET/OE_OCCUPATION.js');
+// var series = require('./API-DATASET/OE_SERIES.js');
+// var wage = require('./API-DATASET/OE_DATA_PUB.js');
+
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
 app.use(function(request, response, next) { // for flash error messages
@@ -50,6 +55,7 @@ var expressValidator = require('express-validator');
 var flash = require('connect-flash');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var STATEVAR;
 
 // Initialize passport
 app.use(passport.initialize());
@@ -73,6 +79,10 @@ app.use(expressValidator({
         };
     }
 }));
+
+console.log(params.matchStateByAbb("FL")); // Proff that it works! 
+
+
 
 // Global Variables For Session Mesages.
 app.use(function(req, res, next) {
@@ -242,6 +252,7 @@ app.get('/thanks', function(request, response) {
     if (!request.session.inpEmail) {
         return response.session.redirect(303, '/register');
     }
+
     Unconfirmed.findOne({
         userEmail: request.session.inpEmail
     }, '_id', function(err, user) {
@@ -318,6 +329,7 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
         });
     });
 });
+
 app.post('/prosurvey', function(request, response) { //this function processes the form data, it does not render a page
     var surveyId;
     if (request.session.surveyId)
@@ -333,7 +345,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
         passThru = (request.body[params.getReqField(i)] != ""); // if required fields are empty, do not passThru
     }
-    if (!passThru) {
+    if (!passThru) { //if the required fields are not filled out, have the user redo the form
         request.session.inpForm = inpForm;
         request.session.alarm = true;
         return response.redirect(303, '/dosurvey');
@@ -348,9 +360,15 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         // if there is no record, or the record has no email address, reject, send home
         if (!user || !user.email) return response.redirect(303, '/');
         inpForm.email = user.email;
-        for (var i = 1; i < params.allFieldsMap.length; i++) { // start at index 1 since email (index 0) is already there.
-            user[params.allFieldsMap[i]] = inpForm[params.allFieldsMap[i]];
+
+
+        for (var i = 1; i < params.getAllFieldsLen(); i++) { // start at index 1 since email (index 0) is already there.
+            user[params.getAllFieldsMap(i)] = inpForm[params.getAllFieldsMap(i)];
+            // console.log(user[params.getAllFieldsMap(i)]);
         }
+
+        // STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
+
         user.save(function(err) {
             if (err) throw (err);
             request.session.dispForm = inpForm;
@@ -359,11 +377,13 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         });
     });
 });
+
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
     if (!request.session.dispForm) {
         response.redirect(303, '/');
     }
     var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
+
     response.render('shosurvey', {
         pgTitle: params.getPgTitle('shosurvey'),
         dispForm: dispForm
@@ -371,13 +391,59 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
 
     // Your time to shine right here Billy Billzzz!
     // Extract state value from dispForm.
-    for(var i=0; i < dispForm.length; i++) {
-      console.log(params.allFieldsMap[i]);
-    }
+    var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq ";
+    //var userInput = "'New York'"; //temporary example (This will be based on user response to the form)
 
+    realmStatus = realmStatus.concat(STATEVAR);
+    var encode = encodeURI(realmStatus);
+    var array = [];
+
+    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
+    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
+    //TypeError: Request path contains unescaped characters --> solution: https://www.w3schools.com/jsref/jsref_encodeuri.asp
+
+    var http = require("http");
+
+    var options = {
+        host: 'api.dol.gov',
+        path: encode,
+        type: 'GET',
+        dataType: 'json',
+        headers: {
+            'accept': 'application/json'
+        }
+    };
+
+    console.log("Start");
+    var x = http.request(options, function(res) {
+        console.log("Connected");
+        //source: http://stackoverflow.com/questions/11826384/calling-a-json-api-with-node-js
+        var str = '';
+        res.on('data', function(chunk) {
+            str += chunk;
+        });
+        res.on('data', function(data) {
+            //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+            if (res.statusCode == 200) {
+                try {
+                    var data = JSON.parse(str);
+                    var state = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                    array.push(state);
+                    console.log(state);
+                } catch (e) {
+                    console.log('Error parsing JSON');
+                }
+            }
+            //console.log(data.toString());
+        });
+    });
+    exports.getArea = function(areaCode) {
+        return array[areaCode];
+        console.log('Returning area code');
+    }
+    x.end();
 
 });
-
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
     response.render('returnuser', {

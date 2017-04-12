@@ -8,8 +8,8 @@ var schema = {
     },
     surveyDate: Date
 };
-for (i = 0; i < params.allFieldsMap.length; i++) {              // not sure why getter methods not working - gpgParams.js
-    schema[params.allFieldsMap[i]] = params.allFieldsType[i];
+for (i = 0; i < params.getAllFieldsLen(); i++) {              // Fixed getter method
+    schema[params.getAllFieldsMap(i)] = params.getAllFieldsType(i);
 }
 //console.log(schema);
 var confirmedSchema = mongoose.Schema(schema);
