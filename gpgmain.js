@@ -450,7 +450,6 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
 
-
     var options = {
         host: 'api.dol.gov',
         path: encode,
@@ -460,8 +459,6 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             'accept': 'application/json'
         }
     };
-
-
 
     console.log("Start");
     var x = http.request(options, function(res) {
