@@ -1,6 +1,7 @@
 /* Fred - create an email resubmit page (for people who don't confirm email right away but email is in our db), set up and error page*/
 var express = require('express');
 var app = express();
+var http = require("http");
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main'
 });
@@ -56,6 +57,8 @@ var flash = require('connect-flash');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var STATEVAR;
+var JOBTITLE;
+var array = [];
 
 // Initialize passport
 app.use(passport.initialize());
@@ -367,7 +370,9 @@ app.post('/prosurvey', function(request, response) { //this function processes t
             // console.log(user[params.getAllFieldsMap(i)]);
         }
 
-        // STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
+        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
+        JOBTITLE = user[params.getAllFieldsMap(7)];
+
 
         user.save(function(err) {
             if (err) throw (err);
@@ -389,20 +394,17 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         dispForm: dispForm
     });
 
+    console.log(STATEVAR);
     // Your time to shine right here Billy Billzzz!
     // Extract state value from dispForm.
-    var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq ";
+    var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq " + "'" + STATEVAR + "'";
     //var userInput = "'New York'"; //temporary example (This will be based on user response to the form)
 
-    realmStatus = realmStatus.concat(STATEVAR);
+    //realmStatus = realmStatus.concat("'" + STATEVAR + "'");
     var encode = encodeURI(realmStatus);
-    var array = [];
-
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
     //TypeError: Request path contains unescaped characters --> solution: https://www.w3schools.com/jsref/jsref_encodeuri.asp
-
-    var http = require("http");
 
     var options = {
         host: 'api.dol.gov',
@@ -437,12 +439,51 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             //console.log(data.toString());
         });
     });
-    exports.getArea = function(areaCode) {
-        return array[areaCode];
-        console.log('Returning area code');
-    }
+    // exports.getArea = function(areaCode) {
+    //     return array[areaCode];
+    //     console.log('Returning area code');
+    // }
     x.end();
+console.log(JOBTITLE);
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'";
+var encode = encodeURI(realmStatus);
+    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
+    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
 
+
+var options = {
+        host: 'api.dol.gov',
+        path: encode,
+        type: 'GET',
+        dataType: 'json',
+        headers: {'accept' : 'application/json'}
+    };
+
+
+
+console.log("Start");
+var x = http.request(options,function(res){
+    console.log("Connected");
+     var str = '';
+    res.on('data', function(chunk) {
+        str += chunk;
+    });
+    res.on('data',function(data){
+        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+        if(res.statusCode == 200){
+            try{
+                var data = JSON.parse(str);
+                var occupationNum = data.d.results[0].OCCUPATION_CODE;
+                array.push(occupationNum);
+                console.log(occupationNum);
+            }catch(e){
+                console.log('Error parsing JSON');
+            }
+        }
+    });
+});
+
+x.end();
 });
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
