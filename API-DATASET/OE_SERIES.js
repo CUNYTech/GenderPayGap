@@ -15,8 +15,6 @@ var options = {
         headers: {'accept' : 'application/json'}
     };
 
-
-
 console.log("Start");
 var x = http.request(options,function(res){
     console.log("Connected");
@@ -26,19 +24,21 @@ var x = http.request(options,function(res){
     });
     res.on('data',function(data){
         if(res.statusCode == 200){
-            try{
-                 var data = JSON.parse(str);
-                //run a for loop 
+
+            try {
+                //run a for loop
                 //source: http://stackoverflow.com/questions/8449659/parsing-json-array-nodejs
-                for(var i = 0; data.d.results.length; i++){
+                for(var i = 0; i < data.d.results.length; i++){
                     var seriesNum = data.d.results[i].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
                     array.push(seriesNum);
                     console.log(seriesNum);
-                }
-                 //end for
-            }catch(e){
-                console.log('Error parsing JSON');
+                } //end for
+
+            } catch(e) {
+                // console.log('Error parsing JSON: ' + e);
             }
+
+
         }
         //console.log(data.toString());
     });

@@ -88,16 +88,12 @@ app.use(expressValidator({
     }
 }));
 
-console.log(params.matchStateByAbb("FL")); // Proff that it works! 
-
-
-
 // Global Variables For Session Mesages.
-app.use(function(req, res, next) {
-    res.locals.success_msg = req.flash('success_msg');
-    res.locals.error_msg = req.flash('error_msg');
-    res.locals.error = req.flash('error');
-    res.locals.user = req.user || null;
+app.use(function(req, response, next) {
+    response.locals.success_msg = req.flash('success_msg');
+    response.locals.error_msg = req.flash('error_msg');
+    response.locals.error = req.flash('error');
+    response.locals.user = req.user || null;
     next();
 });
 // Landing page: home, parameters of inpEmail & errorMsg coming in from form.
@@ -389,6 +385,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
 });
 
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
+
     if (!request.session.dispForm) {
         response.redirect(303, '/');
     }
@@ -399,162 +396,201 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         dispForm: dispForm
     });
 
-    console.log(STATEVAR);
-    // Your time to shine right here Billy Billzzz!
 
-array1.push(function(callback){
-    // Extract state value from dispForm.
-    var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq " + "'" + STATEVAR + "'";
-    //var userInput = "'New York'"; //temporary example (This will be based on user response to the form)
+    console.log("Values coming in from display_form ...");
+    console.log("State: " + STATEVAR);
+    console.log("Occupation: " + JOBTITLE);
 
-    //realmStatus = realmStatus.concat("'" + STATEVAR + "'");
-    var encode = encodeURI(realmStatus);
-    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
-    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
-    //TypeError: Request path contains unescaped characters --> solution: https://www.w3schools.com/jsref/jsref_encodeuri.asp
-
-    var options = {
-        host: 'api.dol.gov',
-        path: encode,
-        type: 'GET',
-        dataType: 'json',
-        headers: {
-            'accept': 'application/json'
-        }
+    var dolResults = {
+        areaCode: '',
+        occupationNumber: '',
+        seriesID: '',
+        annualMeanWage: ''
     };
 
-    console.log("Start AREA");
-    var x = http.request(options, function(res) {
-        console.log("Connected");
-        //source: http://stackoverflow.com/questions/11826384/calling-a-json-api-with-node-js
-        var str = '';
-        res.on('data', function(chunk) {
-            str += chunk;
-        });
-        res.on('data', function(data) {
-            //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-            if (res.statusCode == 200) {
-                try {
-                    var data = JSON.parse(str);
-                    state = data.d[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
-                    array.push(state);
-                    console.log(state);
-                } catch (e) {
-                    console.log('Error parsing JSON for OE_AREA');
+    let getOE_AREA = function() {
+        return new Promise(function(resolve, reject) {
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq " + "'" + STATEVAR + "'",
+                encode = encodeURI(realmStatus);
+
+            var options = {
+                host: 'api.dol.gov',
+                path: encode,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
                 }
-            }
-            //console.log(data.toString());
-        });
-    });
-    // exports.getArea = function(areaCode) {
-    //     return array[areaCode];
-    //     console.log('Returning area code');
-    // }
-    x.end();
-    callback();
-});
-array1.push(function(callback){
-console.log(JOBTITLE);
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'";
-console.log(realmStatus);
-var encode = encodeURI(realmStatus);
-    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
-    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
+            };
+
+            var oeArea = http.request(options, function(response) {
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('end', function(data) {
+                    if (response.statusCode == 200) {
+                        resolve('AREA CODE RETRIEVED');
+                        try {
+                            var data = JSON.parse(str),
+                                areaCode = dolResults.areaCode = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+
+                        } catch (e) {
+                            console.log('Error Parsing JSON');
+                            reject('OE_AREA FAILURE')
+                        } finally {
+                            console.log('Area Code: ' + areaCode);
+                        }
+                    } else {
+                        reject('Failed to connect to: OE_AREA');
+                    }
+                });
+            });
+            oeArea.end();
+        }); // End of Promise
+    }; // End of getOE_AREa
+
+    let getOE_OCCUPATION = function() {
+        return new Promise(function(resolve, reject) {
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'",
+                encode = encodeURI(realmStatus);
+
+            var options = {
+                host: 'api.dol.gov',
+                path: encode,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
 
 
-var options = {
-        host: 'api.dol.gov',
-        path: encode,
-        type: 'GET',
-        dataType: 'json',
-        headers: {'accept' : 'application/json'}
-    };
+            var oeOCCUPATION = http.request(options, function(response) {
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('end', function(data) {
+                    if (response.statusCode == 200) {
+                        resolve('OCCUPATION NUMBER RETRIEVED');
+                        try {
+                            var data = JSON.parse(str),
+                                occupationNumber = dolResults.occupationNumber = data.d.results[0].OCCUPATION_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                        } catch (e) {
+                            console.log('Error Parsing JSON');
+                            reject('OE_OCCUPATION FAILURE')
+                        } finally {
+                            console.log('Occupation Number: ' + occupationNumber);
+                        }
+                    } else {
+                        reject('Failed to connect to: OE_OCCUPATION')
+                    }
+                });
+            });
+            oeOCCUPATION.end();
+        }); // End of Promise
+    }; // End of getOE_OCCUPATION
+
+    let getOE_SERIES = function() {
+        return new Promise(function(resolve, reject) {
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " +
+                "'" + dolResults.occupationNumber + "'" + ") and (AREA_CODE eq " + "'" + dolResults.areaCode + "')",
+                encode = encodeURI(realmStatus);
+
+            var options = {
+                host: 'api.dol.gov',
+                path: encode,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
+            var oeSERIES = http.request(options, function(response) {
+
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('end', function(data) {
+                    if (response.statusCode == 200) {
+                        resolve('OE_SERIES DATA RETRIEVED');
+                        try {
+                            var data = JSON.parse(str),
+                                seriesID = dolResults.seriesID = data.d.results[3].SERIES_ID;
+                        } catch (e) {
+                            // console.log('Error parsing JSON');
+                            reject('OE_SERIES FAILURE')
+                        } finally {
+                            console.log('SERIES_ID: ' + seriesID);
+                        }
+                    } else {
+                        reject('Failed to connect to: OE_SERIES');
+                    }
+                });
+            });
+            oeSERIES.end();
+        }); // end of promise
+    }; // end of OE_SERIES
+
+    let getOE_DATA_PUB = function() {
+        return new Promise(function(resolve, reject) {
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'" + dolResults.seriesID + "'",
+                encode = encodeURI(realmStatus);
+
+            var options = {
+                host: 'api.dol.gov',
+                path: encode,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
+            var oeDATAPUB = http.request(options, function(response) {
+
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('end', function(data) {
+                    if (response.statusCode == 200) {
+                        resolve('OE_DATA_PUB DATA RETRIEVED');
+                        try {
+                            var data = JSON.parse(str),
+                                annualMeanWage = dolResults.annualMeanWage = data.d.results[0].VALUE;
+                        } catch (e) {
+                            // console.log('Error parsing JSON');
+                            reject('OE_SERIES FAILURE')
+                        } finally {
+                            console.log('This is the annual mean wage for ' + JOBTITLE + ': $' + annualMeanWage);
+                        }
+                    } else {
+                        reject('Failed to connect to: OE_DATA_PUB');
+                    }
+                });
+            });
+            oeDATAPUB.end();
+        }); // end of promise
+    }; // end of OE_DATA_PUB
+
+    // Executing asynch functions.
+    getOE_AREA().then(function(message) {
+        console.log(message);
+        return getOE_OCCUPATION(message);
+    }).then(function(message) {
+        console.log(message);
+        return getOE_SERIES(message);
+    }).then(function(message) {
+        console.log(message);
+        return getOE_DATA_PUB(message);
+    }).then(function(message){
+        console.log('MULTI-GET REQUEST COMPLETE');
+    })
 
 
-
-console.log("Start OCCUP");
-var x = http.request(options,function(res){
-    console.log("Connected");
-     var str = '';
-    res.on('data', function(chunk) {
-        str += chunk;
-    });
-    res.on('data',function(data){
-        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-        if(res.statusCode == 200){
-            try{
-                var data = JSON.parse(str);
-                occupationNum = data.d[0].OCCUPATION_CODE;
-                array.push(occupationNum);
-                console.log(occupationNum);
-            }catch(e){
-                console.log('Error parsing JSON for OE_OCCUPATION');
-            }
-        }
-    });
-});
-
-x.end();
-callback();
-});
-
-
-array1.push(function(callback){
-var realmStatusS = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " + "'" + array[0] + "'" + ") and (AREA_CODE eq " + "'" + array[1] + "')";
-console.log(realmStatusS);
-var encodeS = encodeURI(realmStatusS);
-
-    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
-    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
-
-var options = {
-        host: 'api.dol.gov',
-        path: encodeS,
-        type: 'GET',
-        dataType: 'json',
-        headers: {'accept' : 'application/json'}
-    };
-
-
-
-console.log("Start SERIES");
-var x = http.request(options,function(res){
-    console.log("Connected");
-     var str = '';
-    res.on('data', function(chunk) {
-        str += chunk;
-    });
-    res.on('data',function(data){
-        if(res.statusCode == 200){
-            console.log("testttttttttttttt");
-            try{
-                 var data = JSON.parse(str);
-                //run a for loop 
-                //source: http://stackoverflow.com/questions/8449659/parsing-json-array-nodejs
-                           console.log("asdfasdfasdfaf   " + occupationNum + "state  " + state);
-
-                //for(var i = 0; data.d.length; i++){
-                    var seriesNum = data.d[3].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
-                   // array.push(seriesNum);
-                    console.log(seriesNum);
-               // }
-                 //end for
-            }catch(e){
-                //console.log('Error parsing JSON for OE_Series');
-            }
-        }
-        //console.log(data.toString());
-    });
-});
-
-x.end();
-callback();
-});
-async.parallel(array1,function(){
-
-});
-
-});
+}); // End of shosurvey route.
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
     response.render('returnuser', {
