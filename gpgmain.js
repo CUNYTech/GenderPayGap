@@ -484,7 +484,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                             console.log('Occupation Number: ' + occupationNumber);
                         }
                     } else {
-                        reject('Failed to connect to: OE_OCCUPATION')
+                        reject('Failed to connect to: OE_OCCUPATION');
                     }
                 });
             });
@@ -497,7 +497,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " +
                 "'" + dolResults.occupationNumber + "'" + ") and (AREA_CODE eq " + "'" + dolResults.areaCode + "')",
                 encode = encodeURI(realmStatus);
-
+                console.log(realmStatus);
             var options = {
                 host: 'api.dol.gov',
                 path: encode,
@@ -515,13 +515,15 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
+                        console.log('OK')
                         resolve('OE_SERIES DATA RETRIEVED');
                         try {
                             var data = JSON.parse(str),
                                 seriesID = dolResults.seriesID = data.d.results[3].SERIES_ID;
+                                console.log('this is the ID # ' + seriesID);
                         } catch (e) {
-                            // console.log('Error parsing JSON');
-                            reject('OE_SERIES FAILURE')
+                            console.log('Sorry, the Department of Labor provides such information about annual mean wage for your location');
+                            reject('OE_SERIES FAILURE');
                         } finally {
                             console.log('SERIES_ID: ' + seriesID);
                         }
