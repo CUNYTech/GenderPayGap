@@ -2,6 +2,8 @@
 var express = require('express');
 var app = express();
 var http = require("http");
+var loop = require('node-while-loop');
+var async = require('async');
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main'
 });
@@ -58,7 +60,10 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var STATEVAR;
 var JOBTITLE;
+var occupationNum;
+var state;
 var array = [];
+var array1 = [];
 
 // Initialize passport
 app.use(passport.initialize());
@@ -331,6 +336,7 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
             alarm: (request.session.alarm) ? alarm : false // this is for error code - serverside validation
         });
     });
+
 });
 
 app.post('/prosurvey', function(request, response) { //this function processes the form data, it does not render a page
@@ -373,7 +379,6 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
         JOBTITLE = user[params.getAllFieldsMap(7)];
 
-
         user.save(function(err) {
             if (err) throw (err);
             request.session.dispForm = inpForm;
@@ -396,6 +401,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
 
     console.log(STATEVAR);
     // Your time to shine right here Billy Billzzz!
+
+array1.push(function(callback){
     // Extract state value from dispForm.
     var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_AREA/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=AREA_NAME eq " + "'" + STATEVAR + "'";
     //var userInput = "'New York'"; //temporary example (This will be based on user response to the form)
@@ -416,7 +423,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }
     };
 
-    console.log("Start");
+    console.log("Start AREA");
     var x = http.request(options, function(res) {
         console.log("Connected");
         //source: http://stackoverflow.com/questions/11826384/calling-a-json-api-with-node-js
@@ -429,11 +436,11 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             if (res.statusCode == 200) {
                 try {
                     var data = JSON.parse(str);
-                    var state = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                    state = data.d[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                     array.push(state);
                     console.log(state);
                 } catch (e) {
-                    console.log('Error parsing JSON');
+                    console.log('Error parsing JSON for OE_AREA');
                 }
             }
             //console.log(data.toString());
@@ -444,8 +451,12 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     //     console.log('Returning area code');
     // }
     x.end();
+    callback();
+});
+array1.push(function(callback){
 console.log(JOBTITLE);
 var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_OCCUPATION/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=OCCUPATION_NAME eq " + "'" + JOBTITLE + "'";
+console.log(realmStatus);
 var encode = encodeURI(realmStatus);
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
@@ -461,7 +472,7 @@ var options = {
 
 
 
-console.log("Start");
+console.log("Start OCCUP");
 var x = http.request(options,function(res){
     console.log("Connected");
      var str = '';
@@ -473,17 +484,76 @@ var x = http.request(options,function(res){
         if(res.statusCode == 200){
             try{
                 var data = JSON.parse(str);
-                var occupationNum = data.d.results[0].OCCUPATION_CODE;
+                occupationNum = data.d[0].OCCUPATION_CODE;
                 array.push(occupationNum);
                 console.log(occupationNum);
             }catch(e){
-                console.log('Error parsing JSON');
+                console.log('Error parsing JSON for OE_OCCUPATION');
             }
         }
     });
 });
 
 x.end();
+callback();
+});
+
+
+array1.push(function(callback){
+var realmStatusS = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " + "'" + array[0] + "'" + ") and (AREA_CODE eq " + "'" + array[1] + "')";
+console.log(realmStatusS);
+var encodeS = encodeURI(realmStatusS);
+
+    //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
+    //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodejs
+
+var options = {
+        host: 'api.dol.gov',
+        path: encodeS,
+        type: 'GET',
+        dataType: 'json',
+        headers: {'accept' : 'application/json'}
+    };
+
+
+
+console.log("Start SERIES");
+var x = http.request(options,function(res){
+    console.log("Connected");
+     var str = '';
+    res.on('data', function(chunk) {
+        str += chunk;
+    });
+    res.on('data',function(data){
+        if(res.statusCode == 200){
+            console.log("testttttttttttttt");
+            try{
+                 var data = JSON.parse(str);
+                //run a for loop 
+                //source: http://stackoverflow.com/questions/8449659/parsing-json-array-nodejs
+                           console.log("asdfasdfasdfaf   " + occupationNum + "state  " + state);
+
+                //for(var i = 0; data.d.length; i++){
+                    var seriesNum = data.d[3].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
+                   // array.push(seriesNum);
+                    console.log(seriesNum);
+               // }
+                 //end for
+            }catch(e){
+                //console.log('Error parsing JSON for OE_Series');
+            }
+        }
+        //console.log(data.toString());
+    });
+});
+
+x.end();
+callback();
+});
+async.parallel(array1,function(){
+
+});
+
 });
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
