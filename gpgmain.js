@@ -9,7 +9,7 @@ app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
 app.use(bodyParser.urlencoded({
-  extended: true
+    extended: true
 }));
 app.use(bodyParser.json());
 var credentials = require('./credentials.js'); // remember to set your credentials.js file
@@ -112,10 +112,7 @@ app.post('/register', function(request, response) {
         password = request.body.password,
         password2 = request.body.password2;
 
-    // Console log the inputted info.
-    console.log("email: " + email + '\n' +
-        "password: " + password + '\n' +
-        "password2: " + password2);
+
 
     // Validate the params
     request.checkBody('inpEmail', 'Email is required').notEmpty();
@@ -124,48 +121,56 @@ app.post('/register', function(request, response) {
     request.checkBody('password2', 'Passwords do not match').equals(request.body.password);
 
     var errors = request.validationErrors();
+    // Check if user forgot to fill out a field.
     if (errors) {
         response.render('register', {
             errors: errors
         });
-    } else {
+    } else { // Otherwise, proceed with sending an account.
         var inpEmail = request.body.inpEmail.trim(); // FRED - add server-side email verification
         request.session.inpEmail = inpEmail; // add email input to session memory
 
+        var newUser = {
+            email: inpEmail,
+            password: password
+        };
+
         Unconfirmed.findOne({
             userEmail: inpEmail
-        }, '_id', function(err, user) {
+        }).exec(function(err, user) {
             if (err) throw err;
-            if (user) { // if email exists already, do not re-save
-                console.log(user);
-                if (!user.confirmed) // if email exists but is not confirmed
-                    return response.redirect(303, '/resubmit'); // redirect to FRED!! -- create resubmit page
-                else
-                    return response.redirect(303, '/returnuser'); // if email exists and confirmed, redirect to returnuser
+            if (user) {
+                console.log("This email already exists");
+                if (!inpEmail.confirmed) { // Email exists but never confimed their account.
+                    response.redirect(303, '/resubmit');
+                } else { // Email exists & has been confirmed.
+                    response.redirect(303, '/returnuser');
+                }
+            } else {
+                console.log("This is a new email");
             }
-            bcrypt.genSalt(10, function(err, salt) {
-                bcrypt.hash(password, salt, function(err, hash) {
-                    var newUser = {
-                        userEmail: inpEmail,
-                        password: hash // Insert the hashed password.
-                    };
-                    console.log('pw-encrypted: ' + hash);
-                    console.log(user); 
-                    new Unconfirmed({ // add email to unconfirmedemails collec.
-                        newUser // Send encrypted credentials to the db.
-                    }).save();
+            // Synchronously encrypt the inputted password.
+            var salt = bcrypt.genSaltSync(10),
+                hash = bcrypt.hashSync(password, salt);
 
-                });
-            });
-            if (request.session.errorMsg) delete request.session.errorMsg;
-            request.flash('success_msg', 'An email has been sent to your account.');
-            response.redirect(303, '/thanks');
-        });
-    }
-    // Captcha was removed to make POST request again.
-    // CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
+            newUser.password = hash;
+            // Console log the inputted info.
+            console.log("email: " + newUser.email + '\n' +
+                "password: " + newUser.password + '\n' +
+                "password2: " + password2);
+
+            Unconfirmed({
+                userEmail: inpEmail,
+                password: hash
+            }).save();
+        }); // End of exec()
+        request.flash('success_msg', 'You are registered and can now login');
+        response.redirect(303, '/thanks');
+    }; // end of else
 
 });
+// Captcha was removed to make POST request again.
+// CaptchaChek(request, response, credentials.secretKey, '/', dbSave); //captchacheck verification
 
 app.get('/login', function(request, response) {
     response.render('login');
@@ -180,7 +185,7 @@ passport.use(new Strategy(
             }
             if (!email) {
                 return done(null, false, {
-                    message: 'Unknown email'
+                    message: 'Unknown Email'
                 });
             }
             //This is commented out for now since most confirmed users don't have PWs.
@@ -190,7 +195,7 @@ passport.use(new Strategy(
                     return done(null, Confirmed);
                 } else {
                     return done(null, false, {
-                        message: 'Invalid password'
+                        message: 'Invalid Password'
                     });
                 }
             });
@@ -207,7 +212,6 @@ passport.deserializeUser(function(id, done) {
         done(err, user);
     });
 });
-
 
 app.post('/login',
     passport.authenticate('basic', {

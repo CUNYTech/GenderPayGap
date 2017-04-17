@@ -17,9 +17,9 @@ for (i = 0; i < params.allFieldsMap.length; i++) { // not sure why getter method
 var confirmedSchema = mongoose.Schema(schema);
 var Confirmed = mongoose.model('confirmedemail', confirmedSchema);
 
-module.exports.getUserByEmail = function(email, callback) {
+module.exports.getUserByEmail = function(candidateEmail, callback) {
     var query = {
-        email: email
+        email: candidateEmail // This may not be coming in correctly. 
     };
     Confirmed.findOne(query, callback);
 }
