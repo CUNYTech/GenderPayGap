@@ -392,8 +392,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     var dolResults = {
         areaCode: '',
         occupationNumber: '',
-        seriesID: '',
-        annualMeanWage: ''
+        seriesIDannual: '',
+        annualMeanWage: '',
+        footNoteID: '',
+        footNoteTxt: ''
     };
 
     let getOE_AREA = function() {
@@ -507,13 +509,14 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('OE_SERIES DATA RETRIEVED');
                         try {
                             var data = JSON.parse(str),
-                                seriesID = dolResults.seriesID = data.d.results[3].SERIES_ID;
-                                console.log('this is the ID # ' + seriesID);
+                                seriesIDannual = dolResults.seriesIDannual = data.d.results[3].SERIES_ID;
+                                footNoteID = dolResults.footNoteID = data.d.results[3].FOOTNOTE_CODES;
+                                console.log('this is the ID # ' + seriesIDannual);
                         } catch (e) {
                             console.log('Sorry, the Department of Labor provides such information about annual mean wage for your location');
                             reject('OE_SERIES FAILURE');
                         } finally {
-                            console.log('SERIES_ID: ' + seriesID);
+                            console.log('SERIES_ID: ' + seriesIDannual);
                         }
                     } else {
                         reject('Failed to connect to: OE_SERIES');
@@ -526,7 +529,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
 
     let getOE_DATA_PUB = function() {
         return new Promise(function(resolve, reject) {
-            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'" + dolResults.seriesID + "'",
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'" + dolResults.seriesIDannual + "'",
                 encode = encodeURI(realmStatus);
 
             var options = {
@@ -565,6 +568,47 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
+    let getFootNote = function(){
+        return new Promise(function(resolve, reject){
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_FOOTNOTE/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=FOOTNOTE_CODE eq " + "'" + dolResults.footNoteID + "'",
+                encode = encodeURI(realmStatus);
+
+            var options = {
+                host: 'api.dol.gov',
+                path: encode,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
+            var oeFN = http.request(options, function(response) {
+
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('end', function(data) {
+                    if (response.statusCode == 200) {
+                        resolve('OE_FOOTNOTE DATA RETRIEVED');
+                        try {
+                            var data = JSON.parse(str),
+                                footNoteTxt = dolResults.footNoteTxt = data.d.results[0].FOOTNOTE_TEXT;
+                        } catch (e) {
+                            // console.log('Error parsing JSON');
+                            reject('OE_FOOTNOTE FAILURE')
+                        } finally {
+                            console.log('This is the footnote: ' +  footNoteTxt);
+                        }
+                    } else {
+                        reject('Failed to connect to: OE_FOOTNOTE');
+                    }
+                });
+            });
+            oeFN.end();
+        }); //end promise
+    }; //end oeFN
+
     let showValues = function(){
         return new Promise(function(resolve,reject){
             if (!request.session.dispForm) {
@@ -576,7 +620,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 pgTitle: params.getPgTitle('shosurvey'),
                 dispForm: dispForm,
                 occupation: JOBTITLE,
-                meanWage: dolResults.annualMeanWage
+                meanWage: dolResults.annualMeanWage,
+                footnote: dolResults.footNoteTxt
             });
         });
     };
@@ -591,6 +636,9 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     }).then(function(message) {
         console.log(message);
         return getOE_DATA_PUB(message);
+    }).then(function(message){
+        console.log(message);
+        return getFootNote(message);
     }).then(function(message){
         console.log('MULTI-GET REQUEST COMPLETE');
         return showValues(message);
