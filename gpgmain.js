@@ -162,10 +162,12 @@ app.post('/register', function(request, response) {
             Unconfirmed({
                 userEmail: inpEmail,
                 password: hash
-            }).save();
+            }).save().then(() => {
+                request.flash('success_msg', 'You are registered and can now login');
+                response.redirect(303, '/thanks');        
+            });
         }); // End of exec()
-        request.flash('success_msg', 'You are registered and can now login');
-        response.redirect(303, '/thanks');
+        
     }; // end of else
 
 });
