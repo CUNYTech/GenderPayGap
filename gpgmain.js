@@ -60,6 +60,7 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var STATEVAR;
 var JOBTITLE;
+var SALARY;
 var occupationNum;
 var state;
 var array = [];
@@ -374,6 +375,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
 
         STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
         JOBTITLE = user[params.getAllFieldsMap(7)];
+        SALARY =  params.getSalaryValue(user[params.getAllFieldsMap(9)]);
 
         user.save(function(err) {
             if (err) throw (err);
@@ -621,6 +623,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 dispForm: dispForm,
                 occupation: JOBTITLE,
                 meanWage: dolResults.annualMeanWage,
+                userSalary: SALARY,
                 footnote: dolResults.footNoteTxt
             });
         });
