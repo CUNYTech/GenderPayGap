@@ -1,4 +1,7 @@
 <article id="pgDisplay">
+    <h1>Thanks for completing our survey!</h1>
+    <br/>
+<!--
     <h2>Here are the items you entered:</h2>
     <section id="respDispSec">
         {{#each dispForm}}
@@ -8,4 +11,10 @@
             </aside>
         {{/each}}
     </section>
+-->
+    {{#if meanWage}}
+        <h5>The annual mean wage for {{occupation}} in your area is: ${{meanWage}}.</h5>
+    {{else}}
+        <h5>Sorry, The Department of Labor does not provide information about your occupation.</h5>
+    {{/if}}
 </article>

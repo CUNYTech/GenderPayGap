@@ -385,18 +385,6 @@ app.post('/prosurvey', function(request, response) { //this function processes t
 });
 
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
-
-    if (!request.session.dispForm) {
-        response.redirect(303, '/');
-    }
-    var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
-
-    response.render('shosurvey', {
-        pgTitle: params.getPgTitle('shosurvey'),
-        dispForm: dispForm
-    });
-
-
     console.log("Values coming in from display_form ...");
     console.log("State: " + STATEVAR);
     console.log("Occupation: " + JOBTITLE);
@@ -577,6 +565,22 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
+    let showValues = function(){
+        return new Promise(function(resolve,reject){
+            if (!request.session.dispForm) {
+            response.redirect(303, '/');
+            }
+            var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
+            //var meanWage = dolResults.annualMeanWage;
+            response.render('shosurvey', {
+                pgTitle: params.getPgTitle('shosurvey'),
+                dispForm: dispForm,
+                occupation: JOBTITLE,
+                meanWage: dolResults.annualMeanWage
+            });
+        });
+    };
+
     // Executing asynch functions.
     getOE_AREA().then(function(message) {
         console.log(message);
@@ -589,9 +593,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         return getOE_DATA_PUB(message);
     }).then(function(message){
         console.log('MULTI-GET REQUEST COMPLETE');
+        return showValues(message);
     })
-
-
 }); // End of shosurvey route.
 
 app.get('/returnuser', function(request, response) { // this page for emails already confirmed, check if survey completed
