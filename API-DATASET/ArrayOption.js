@@ -1,6 +1,5 @@
 var http = require("http");
 var areaCodes = ["'OEUM003561400000015113104'", "'OEUM001697400000015113104'", "'OEUM004264400000015113104'", "'OEUM004789400000015113104'", "'OEUM003108400000015113104'", "'OEUM004194000000015113104'", "'OEUS360000000000015113104'"];
-var results = [];
 var encode = [];
 
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
@@ -28,17 +27,16 @@ var x = http.request(options,function(res){
     });
     res.on('data',function(data){
        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-        //  if(res.statusCode == 200){
-        //     try{
-        //         var data = JSON.parse(str);
-        //         var state = data.d.results[0].VALUE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
-        //         array.push(state);
-        //         console.log(state);
-        //     }catch(e){
-        //         //console.log('Error parsing JSON');
-        //     }
-        // }
-       console.log(data.toString());
+         if(res.statusCode == 200){
+            try{
+                var data = JSON.parse(str);
+                var state = data.d.results[0].VALUE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                console.log(state);
+            }catch(e){
+                //console.log('Error parsing JSON');
+            }
+        }
+      // console.log(data.toString());
     });
 });
 x.end();
