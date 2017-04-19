@@ -1,4 +1,6 @@
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '151131') and (AREA_CODE eq '3600000')";
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '151131' ) and (AREA_CODE eq '3600000')";
+                    //http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '152091') and (AREA_CODE eq '0500000')
+
 var encode = encodeURI(realmStatus);
 var array = [];
 
@@ -27,17 +29,17 @@ var x = http.request(options,function(res){
     res.on('data',function(data){
         if(res.statusCode == 200){
             try{
-                 var data = JSON.parse(str);
+                 var dataA = JSON.parse(str);
                 //run a for loop 
                 //source: http://stackoverflow.com/questions/8449659/parsing-json-array-nodejs
-                for(var i = 0; data.d.results.length; i++){
-                    var seriesNum = data.d.results[i].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
+                for(var i = 0; i < dataA.d.results.length; i++){
+                    var seriesNum = dataA.d.results[i].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
                     array.push(seriesNum);
                     console.log(seriesNum);
                 }
                  //end for
             }catch(e){
-                console.log('Error parsing JSON');
+                //console.log('Error parsing JSON');
             }
         }
         //console.log(data.toString());

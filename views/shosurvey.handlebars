@@ -1,4 +1,7 @@
 <article id="pgDisplay">
+    <h1>Thanks for completing our survey!</h1>
+    <br/>
+<!--
     <h2>Here are the items you entered:</h2>
     <section id="respDispSec">
         {{#each dispForm}}
@@ -8,4 +11,14 @@
             </aside>
         {{/each}}
     </section>
+-->
+    <!-- source https://www.sitepoint.com/a-beginners-guide-to-handlebars/ -->
+    {{#if meanWage}}
+        <h5>Hi! This is the annual wage you have entered: {{userSalary}}.</h5>
+        <br/>
+        <h5>The annual mean wage for {{occupation}} in your area is: ${{meanWage}}.</h5>
+        <font size = "1">Note: {{footnote}} If no value is shown,then The Department of Labor does not provide information about your occupation.</font>
+    {{else}}
+        <h5>Sorry, The Department of Labor does not provide information about your occupation.</h5>
+    {{/if}}
 </article>
