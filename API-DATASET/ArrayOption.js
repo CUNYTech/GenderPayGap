@@ -1,19 +1,20 @@
-var areaCodes = ["'0071950')", "'0072850')", "'0073450')", "'0075700')", "'0076450')", "'0078700')", "'0900001')", "'0900000')"];
+var http = require("http");
+var areaCodes = ["'OEUM003561400000015113104'", "'OEUM001697400000015113104'", "'OEUM004264400000015113104'", "'OEUM004789400000015113104'", "'OEUM003108400000015113104'", "'OEUM004194000000015113104'", "'OEUS360000000000015113104'"];
 var results = [];
+var encode = [];
 
     //"http://api.dol.gov/V1/WHPS/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4";
     //source: http://stackoverflow.com/questions/17811827/get-a-json-via-http-request-in-nodej
 for(var i = 0; i < areaCodes.length; i++){
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq '151131' ) and (AREA_CODE eq " + areaCodes[i];
-var encode = encodeURI(realmStatus);
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + areaCodes[i];
+encode.push(encodeURI(realmStatus));
         console.log("iterator: " + i);
-        console.log(encode);
+        console.log("endpoint encoded: " + encode[i]);
 
-var http = require("http");
 
 var options = {
         host: 'api.dol.gov',
-        path: encode,
+        path: encode[i],
         type: 'GET',
         dataType: 'json',
         headers: {'accept' : 'application/json'}
@@ -27,22 +28,17 @@ var x = http.request(options,function(res){
     });
     res.on('data',function(data){
        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-        if(res.statusCode == 200){
-            try{
-                 var dataA = JSON.parse(str);
-                //run a for loop 
-                //source: http://stackoverflow.com/questions/8449659/parsing-json-array-nodejs
-                for(var h = 0; h < dataA.d.results.length; h++){
-                    var seriesNum = dataA.d.results[h].SERIES_ID; //<--- data.d[i].series_id (THE FOURTH SERIES ID # REPRESENTS ANNUAL MEAN WAGE)
-                    array.push(seriesNum);
-                    console.log(seriesNum);
-                }
-                 //end for
-            }catch(e){
-                //console.log('Error parsing JSON');
-            }
-        }
-       //console.log(data.toString());
+        //  if(res.statusCode == 200){
+        //     try{
+        //         var data = JSON.parse(str);
+        //         var state = data.d.results[0].VALUE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+        //         array.push(state);
+        //         console.log(state);
+        //     }catch(e){
+        //         //console.log('Error parsing JSON');
+        //     }
+        // }
+       console.log(data.toString());
     });
 });
 x.end();
