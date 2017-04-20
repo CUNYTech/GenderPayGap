@@ -2,7 +2,6 @@
 var express = require('express');
 var app = express();
 var http = require("http");
-var loop = require('node-while-loop');
 var async = require('async');
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main'
