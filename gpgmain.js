@@ -39,10 +39,6 @@ var Confirmed = require('./models/confirmed.js'); // mongoose schema
 var params = require('./lib/gpgParams.js'); // the main parameters for the site
 var CaptchaChek = require('./lib/gpgCaptcha.js'); // captcha verification here.
 var emailSender = require('./lib/gpgEmailer.js')(credentials); // emailer utilities here
-// var empArea = require('./API-DATASET/OE_AREA.js');
-// var empOccp = require('./API-DATASET/OE_OCCUPATION.js');
-// var series = require('./API-DATASET/OE_SERIES.js');
-// var wage = require('./API-DATASET/OE_DATA_PUB.js');
 
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
@@ -58,8 +54,10 @@ var flash = require('connect-flash');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var STATEVAR;
+var STATECODE;
 var JOBTITLE;
 var SALARY;
+var METROAREA;
 var occupationNum;
 var state;
 var array = [];
@@ -372,7 +370,11 @@ app.post('/prosurvey', function(request, response) { //this function processes t
             // console.log(user[params.getAllFieldsMap(i)]);
         }
 
-        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]);
+        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state name
+        STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state code
+        console.log("the state code for: " + STATEVAR + " is: " + STATECODE);
+        METROAREA = params.getMetroArea(STATECODE); // < ------------ I NEED TO ACCESS THE ARRAY OF AREA CODES IN THIS OBJECT. TRIED USING A FOR LOOP TO NO AVAIL. WILL WORK ON THIS LATER
+        
         JOBTITLE = user[params.getAllFieldsMap(7)];
         SALARY =  params.getSalaryValue(user[params.getAllFieldsMap(9)]);
 
@@ -623,7 +625,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 occupation: JOBTITLE,
                 meanWage: dolResults.annualMeanWage,
                 userSalary: SALARY,
-                footnote: dolResults.footNoteTxt
+                footnote: dolResults.footNoteTxt,
+                metro: METROAREA
             });
         });
     };
