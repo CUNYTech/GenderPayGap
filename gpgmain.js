@@ -57,11 +57,12 @@ var STATEVAR;
 var STATECODE;
 var JOBTITLE;
 var SALARY;
-var METROAREA;
+var METROAREA = [];
 var occupationNum;
 var state;
-var array = [];
-var array1 = [];
+var metroWageArray = [];
+var encode;
+var encode2 = [];
 
 // Initialize passport
 app.use(passport.initialize());
@@ -373,8 +374,12 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state name
         STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state code
         console.log("the state code for: " + STATEVAR + " is: " + STATECODE);
-        METROAREA = params.getMetroArea(STATECODE); // < ------------ I NEED TO ACCESS THE ARRAY OF AREA CODES IN THIS OBJECT. TRIED USING A FOR LOOP TO NO AVAIL. WILL WORK ON THIS LATER
+        METROAREA = params.getMetroArea(STATECODE); 
         
+        for(var k = 0; k < METROAREA.length; k++){
+            console.log("this is in the metroarea array: " + METROAREA[k]);
+        }
+
         JOBTITLE = user[params.getAllFieldsMap(7)];
         SALARY =  params.getSalaryValue(user[params.getAllFieldsMap(9)]);
 
@@ -571,6 +576,49 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
+    let getWageMetroArea = function(){
+        return new Promise(function(resolve, reject){
+            for(var i = 0; i < METROAREA.length; i++){
+                var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + METROAREA[i] + "000000" + dolResults.occupationNumber + "04'";
+                encode2.push(encodeURI(realmStatus));
+                        // console.log("iterator: " + i);
+                        // console.log("endpoint encoded: " + encode2[i]);
+
+                var options = {
+                        host: 'api.dol.gov',
+                        path: encode2[i],
+                        type: 'GET',
+                        dataType: 'json',
+                        headers: {'accept' : 'application/json'}
+                };
+                console.log("Start");
+                var x = http.request(options,function(res){
+                    console.log("Connected");
+                     var str = '';
+                    res.on('data', function(chunk) {
+                        str += chunk;
+                    });
+                    res.on('data',function(data){
+                       //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+                         if(res.statusCode == 200){
+                            try{
+                                var data = JSON.parse(str);
+                                metroWageArray.push(data.d.results[0].VALUE); //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                                for(var j = 0; j < metroWageArray.length; j++){
+                                   console.log(metroWageArray[j]);
+                                }
+                            }catch(e){
+                                //console.log('Error parsing JSON');
+                            }
+                        }
+                      // console.log(data.toString());
+                    });
+                });
+                x.end();
+                }//end for loop
+        }); //end promise
+    }; //end getWageMetroArea
+
     let getFootNote = function(){
         return new Promise(function(resolve, reject){
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_FOOTNOTE/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=FOOTNOTE_CODE eq " + "'" + dolResults.footNoteID + "'",
@@ -641,6 +689,9 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     }).then(function(message) {
         console.log(message);
         return getOE_DATA_PUB(message);
+    }).then(function(message){
+        console.log(message);
+        return getWageMetroArea(message);
     }).then(function(message){
         console.log(message);
         return getFootNote(message);

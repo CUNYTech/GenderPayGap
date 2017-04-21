@@ -1,4 +1,5 @@
-var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq 'OEUS360000000000015113102'";
+
+var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq 'OEUM003561400000015113104'";
 var encode = encodeURI(realmStatus);
 
 
