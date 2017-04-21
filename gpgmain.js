@@ -313,10 +313,11 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
 
 app.get('/dosurvey', function(request, response) { // Fred - add referrer page restriction to disable back button
     var surveyId;
-    if (request.session.surveyId)
+    if (request.session.surveyId) {
         surveyId = request.session.surveyId;
-    else
+    } else {
         return response.redirect(303, '/');
+    }
 
     Confirmed.findById(surveyId, function(err, user) {
         if (err) console.log(err);
@@ -335,10 +336,11 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
 
 app.post('/prosurvey', function(request, response) { //this function processes the form data, it does not render a page
     var surveyId;
-    if (request.session.surveyId)
+    if (request.session.surveyId) {
         surveyId = request.session.surveyId;
-    else
+    } else {
         return response.redirect(303, '/');
+    }
 
     var passThru = true;
     var inpForm = {
@@ -364,7 +366,6 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         if (!user || !user.email) return response.redirect(303, '/');
         inpForm.email = user.email;
 
-
         for (var i = 1; i < params.getAllFieldsLen(); i++) { // start at index 1 since email (index 0) is already there.
             user[params.getAllFieldsMap(i)] = inpForm[params.getAllFieldsMap(i)];
             // console.log(user[params.getAllFieldsMap(i)]);
@@ -374,9 +375,8 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state code
         console.log("the state code for: " + STATEVAR + " is: " + STATECODE);
         METROAREA = params.getMetroArea(STATECODE); // < ------------ I NEED TO ACCESS THE ARRAY OF AREA CODES IN THIS OBJECT. TRIED USING A FOR LOOP TO NO AVAIL. WILL WORK ON THIS LATER
-        
         JOBTITLE = user[params.getAllFieldsMap(7)];
-        SALARY =  params.getSalaryValue(user[params.getAllFieldsMap(9)]);
+        SALARY = params.getSalaryValue(user[params.getAllFieldsMap(9)]);
 
         user.save(function(err) {
             if (err) throw (err);
@@ -490,7 +490,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " +
                 "'" + dolResults.occupationNumber + "'" + ") and (AREA_CODE eq " + "'" + dolResults.areaCode + "')",
                 encode = encodeURI(realmStatus);
-                console.log(realmStatus);
+            console.log(realmStatus);
             var options = {
                 host: 'api.dol.gov',
                 path: encode,
@@ -513,8 +513,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         try {
                             var data = JSON.parse(str),
                                 seriesIDannual = dolResults.seriesIDannual = data.d.results[3].SERIES_ID;
-                                footNoteID = dolResults.footNoteID = data.d.results[3].FOOTNOTE_CODES;
-                                console.log('this is the ID # ' + seriesIDannual);
+                            footNoteID = dolResults.footNoteID = data.d.results[3].FOOTNOTE_CODES;
+                            console.log('this is the ID # ' + seriesIDannual);
                         } catch (e) {
                             console.log('Sorry, the Department of Labor provides such information about annual mean wage for your location');
                             reject('OE_SERIES FAILURE');
@@ -571,8 +571,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
-    let getFootNote = function(){
-        return new Promise(function(resolve, reject){
+    let getFootNote = function() {
+        return new Promise(function(resolve, reject) {
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_FOOTNOTE/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=FOOTNOTE_CODE eq " + "'" + dolResults.footNoteID + "'",
                 encode = encodeURI(realmStatus);
 
@@ -601,7 +601,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                             // console.log('Error parsing JSON');
                             reject('OE_FOOTNOTE FAILURE')
                         } finally {
-                            console.log('This is the footnote: ' +  footNoteTxt);
+                            console.log('This is the footnote: ' + footNoteTxt);
                         }
                     } else {
                         reject('Failed to connect to: OE_FOOTNOTE');
@@ -612,10 +612,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); //end promise
     }; //end oeFN
 
-    let showValues = function(){
-        return new Promise(function(resolve,reject){
+    let showValues = function() {
+        return new Promise(function(resolve, reject) {
             if (!request.session.dispForm) {
-            response.redirect(303, '/');
+                response.redirect(303, '/');
             }
             var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
             //var meanWage = dolResults.annualMeanWage;
@@ -641,10 +641,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     }).then(function(message) {
         console.log(message);
         return getOE_DATA_PUB(message);
-    }).then(function(message){
+    }).then(function(message) {
         console.log(message);
         return getFootNote(message);
-    }).then(function(message){
+    }).then(function(message) {
         console.log('MULTI-GET REQUEST COMPLETE');
         return showValues(message);
     })

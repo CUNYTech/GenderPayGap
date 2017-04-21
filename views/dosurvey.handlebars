@@ -51,7 +51,13 @@
             <div class="frmRw">
                 <div class="fmLbl">Your Title/Position*:</div>
                 <div class="fmInp">
-                    <input id="empTitle" name="empTitle" type="text" size="25">
+                    <!-- Drop down selections are located here -->
+                    <select id="empTitle" name="empTitle">
+                      <option value="">(select)</option>
+                      {{#each params.getOccupations}}
+                          <option value="{{@index}}">{{this}}</option>
+                      {{/each}}
+                    </select>
                 </div>
             </div>
             <div class="frmRw">
@@ -77,7 +83,7 @@
                 </div>
             </div>
             <div class="frmRw">
-                <div class="fmLbl">Your name:</div>
+                <div class="fmLbl">Username:</div>
                 <div class="fmInp">
                     <input id="userName" name="userName" type="text" size="25" autofocus>
                 </div>
