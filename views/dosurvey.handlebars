@@ -51,11 +51,10 @@
             <div class="frmRw">
                 <div class="fmLbl">Your Title/Position*:</div>
                 <div class="fmInp">
-                    <!-- Drop down selections are located here -->
                     <select id="empTitle" name="empTitle">
                       <option value="">(select)</option>
                       {{#each params.getOccupations}}
-                          <option value="{{@index}}">{{this}}</option>
+                          <option value="{{this}}">{{this}}</option>
                       {{/each}}
                     </select>
                 </div>

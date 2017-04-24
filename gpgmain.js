@@ -351,6 +351,9 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
         passThru = (request.body[params.getReqField(i)] != ""); // if required fields are empty, do not passThru
     }
+
+    console.log("Value of occupations as it was read in: " + inpForm[params.getReqField(2)]); 
+
     if (!passThru) { //if the required fields are not filled out, have the user redo the form
         request.session.inpForm = inpForm;
         request.session.alarm = true;
@@ -369,20 +372,22 @@ app.post('/prosurvey', function(request, response) { //this function processes t
 
         for (var i = 1; i < params.getAllFieldsLen(); i++) { // start at index 1 since email (index 0) is already there.
             user[params.getAllFieldsMap(i)] = inpForm[params.getAllFieldsMap(i)];
-            // console.log(user[params.getAllFieldsMap(i)]);
         }
 
-        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state name
-        STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state code
-        console.log("the state code for: " + STATEVAR + " is: " + STATECODE);
+        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state_name
+        STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state_code
         METROAREA = params.getMetroArea(STATECODE);
 
-        for(var k = 0; k < METROAREA.length; k++){
-            console.log("this is in the metroarea array: " + METROAREA[k]);
+        console.log("List of all metro areas from from user survey: ");
+        for (var k = 0; k < METROAREA.length; k++) {
+            console.log(METROAREA[k]);
         }
 
         JOBTITLE = user[params.getAllFieldsMap(7)];
         SALARY = params.getSalaryValue(user[params.getAllFieldsMap(9)]);
+        console.log("Values coming in from post_survey ...");
+        console.log("State: " + STATEVAR);
+        console.log("Occupation: " + JOBTITLE);
 
         user.save(function(err) {
             if (err) throw (err);
@@ -390,13 +395,11 @@ app.post('/prosurvey', function(request, response) { //this function processes t
             if (request.session.alarm) delete request.session.alarm;
             response.redirect(303, '/shosurvey');
         });
+
     });
 });
 
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
-    console.log("Values coming in from display_form ...");
-    console.log("State: " + STATEVAR);
-    console.log("Occupation: " + JOBTITLE);
 
     var dolResults = {
         areaCode: '',
@@ -435,8 +438,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                                 areaCode = dolResults.areaCode = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
 
                         } catch (e) {
-                            console.log('Error Parsing JSON');
-                            reject('OE_AREA FAILURE')
+                            console.log('Error Parsing JSON in OE_AREA');
+                            reject('OE_AREA FAILURE' + 'Error Message: ' + e);
                         } finally {
                             console.log('Area Code: ' + areaCode);
                         }
@@ -477,10 +480,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                             var data = JSON.parse(str),
                                 occupationNumber = dolResults.occupationNumber = data.d.results[0].OCCUPATION_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                         } catch (e) {
-                            console.log('Error Parsing JSON');
+                            console.log('Error Parsing JSON in oeOccupation');
                             reject('OE_OCCUPATION FAILURE')
                         } finally {
-                            console.log('Occupation Number: ' + occupationNumber);
+                            console.log('OCCUPATION NUMBER: ' + occupationNumber);
                         }
                     } else {
                         reject('Failed to connect to: OE_OCCUPATION');
@@ -514,7 +517,6 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        console.log('OK')
                         resolve('OE_SERIES DATA RETRIEVED');
                         try {
                             var data = JSON.parse(str),
@@ -577,46 +579,48 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
-    let getWageMetroArea = function(){
-        return new Promise(function(resolve, reject){
-            for(var i = 0; i < METROAREA.length; i++){
+    let getWageMetroArea = function() {
+        return new Promise(function(resolve, reject) {
+            for (var i = 0; i < METROAREA.length; i++) {
                 var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + METROAREA[i] + "000000" + dolResults.occupationNumber + "04'";
                 encode2.push(encodeURI(realmStatus));
-                        // console.log("iterator: " + i);
-                        // console.log("endpoint encoded: " + encode2[i]);
+                // console.log("iterator: " + i);
+                // console.log("endpoint encoded: " + encode2[i]);
 
                 var options = {
-                        host: 'api.dol.gov',
-                        path: encode2[i],
-                        type: 'GET',
-                        dataType: 'json',
-                        headers: {'accept' : 'application/json'}
+                    host: 'api.dol.gov',
+                    path: encode2[i],
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'accept': 'application/json'
+                    }
                 };
-                console.log("Start");
-                var x = http.request(options,function(res){
-                    console.log("Connected");
-                     var str = '';
-                    res.on('data', function(chunk) {
+
+                var metroArea = http.request(options, function(response) {
+                    var str = '';
+                    response.on('data', function(chunk) {
                         str += chunk;
                     });
-                    res.on('data',function(data){
-                       //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-                         if(res.statusCode == 200){
-                            try{
+                    response.on('data', function(data) {
+                        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+                        if (response.statusCode == 200) {
+                            resolve("Gathering Salaries For All Known Locations");
+                            try {
                                 var data = JSON.parse(str);
                                 metroWageArray.push(data.d.results[0].VALUE); //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
-                                for(var j = 0; j < metroWageArray.length; j++){
-                                   console.log(metroWageArray[j]);
+                                for (var j = 0; j < metroWageArray.length; j++) {
+                                    console.log(metroWageArray[j]);
                                 }
-                            }catch(e){
+                            } catch (e) {
                                 //console.log('Error parsing JSON');
                             }
                         }
-                      // console.log(data.toString());
+                        // console.log(data.toString());
                     });
                 });
-                x.end();
-                }//end for loop
+                metroArea.end();
+            } // end for loop
         }); //end promise
     }; //end getWageMetroArea
 
@@ -680,6 +684,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         });
     };
 
+/*
+.catch(function(e) { // Error-handling test start.
+    console.log("OE_AREA Failure");
+})*/
     // Executing asynch functions.
     getOE_AREA().then(function(message) {
         console.log(message);
@@ -693,7 +701,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     }).then(function(message) {
         console.log(message);
         return getWageMetroArea(message);
-    }).then(function(message){
+    }).then(function(message) {
         console.log(message);
         return getFootNote(message);
     }).then(function(message) {
