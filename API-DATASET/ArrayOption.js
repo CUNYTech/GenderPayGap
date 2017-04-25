@@ -27,12 +27,12 @@ var x = http.request(options,function(res){
     res.on('data', function(chunk) {
         str += chunk;
     });
-    res.on('data',function(data){
+    res.on('end',function(data){
        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
          if(res.statusCode == 200){
             try{
                 var data = JSON.parse(str);
-                var state = data.d.results[0].VALUE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                var state = data.d[0].VALUE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                 console.log(state);
             }catch(e){
                 //console.log('Error parsing JSON');
