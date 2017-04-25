@@ -431,7 +431,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('AREA CODE RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                areaCode = dolResults.areaCode = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                                areaCode = dolResults.areaCode = data.d[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
 
                         } catch (e) {
                             console.log('Error Parsing JSON in OE_AREA');
@@ -474,7 +474,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('OCCUPATION NUMBER RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                occupationNumber = dolResults.occupationNumber = data.d.results[0].OCCUPATION_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
+                                occupationNumber = dolResults.occupationNumber = data.d[0].OCCUPATION_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                         } catch (e) {
                             console.log('Error Parsing JSON in OE_OCCUPATION');
                             reject('OE_OCCUPATION FAILURE ' + 'Error: ' + e);
@@ -516,8 +516,8 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('OE_SERIES DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                seriesIDannual = dolResults.seriesIDannual = data.d.results[3].SERIES_ID,
-                                footNoteID = dolResults.footNoteID = data.d.results[3].FOOTNOTE_CODES;
+                                seriesIDannual = dolResults.seriesIDannual = data.d[3].SERIES_ID,
+                                footNoteID = dolResults.footNoteID = data.d[3].FOOTNOTE_CODES;
                         } catch (e) {
                             console.log('Sorry, Department Of Labor does not provide annual mean wage for ' + STATEVAR);
                             reject('OE_SERIES FAILURE\n');
@@ -559,7 +559,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('OE_DATA_PUB DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                annualMeanWage = dolResults.annualMeanWage = data.d.results[0].VALUE;
+                                annualMeanWage = dolResults.annualMeanWage = data.d[0].VALUE;
                         } catch (e) {
                             // console.log('Error parsing JSON');
                             reject('OE_SERIES FAILURE\n')
@@ -575,44 +575,42 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
-    let getWageMetroArea = function() {
+    let getWageMetroArea = function(areaCode) {
         return new Promise(function(resolve, reject) {
-            console.log("Pulling mean wages from DOL ...");
-            for (var i = 0; i < METROAREA.length; i++) {
-                var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + METROAREA[i] + "000000" + dolResults.occupationNumber + "04'";
-                encode2.push(encodeURI(realmStatus));
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + areaCode + "000000" + dolResults.occupationNumber + "04'";
+            encode2.push(encodeURI(realmStatus));
 
-                var options = {
-                    host: 'api.dol.gov',
-                    path: encode2[i],
-                    type: 'GET',
-                    dataType: 'json',
-                    headers: {
-                        'accept': 'application/json'
-                    }
-                };
+            var options = {
+                host: 'api.dol.gov',
+                path: encode2[i],
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
 
-                var metroArea = http.request(options, function(response) {
-                    var str = '';
-                    response.on('data', function(chunk) {
-                        str += chunk;
-                    });
-                    response.on('data', function(data) {
-                        //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-                        if (response.statusCode == 200) {
-                            resolve("Gathered Salaries For All Known Locations\n");
-                            try {
-                                var data = JSON.parse(str);
-                                metroWageArray.push(data.d.results[0].VALUE);
-                            } catch (e) {
-                                //console.log('Error parsing JSON');
-                            }
-                        }
-                        // console.log(data.toString());
-                    });
+            var metroArea = http.request(options, function(response) {
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
                 });
-                metroArea.end();
-            } // end for loop
+                response.on('data', function(data) {
+                    //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+                    if (response.statusCode == 200) {
+                        try {
+                            var data = JSON.parse(str);
+                            // metroWageArray.push(data.d[0].VALUE);
+                            console.log("Mean Salary for area_code (" + areaCode + ") --> " + data.d[0].VALUE);
+                            Promise.resolve(data.d[0].VALUE); // Send in the metrowage here into the map.
+                        } catch (e) {
+                            //console.log('Error parsing JSON');
+                        }
+                    }
+                    // console.log(data.toString());
+                });
+            });
+            metroArea.end();
         }); //end promise
     }; //end getWageMetroArea
 
@@ -641,7 +639,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                         resolve('OE_FOOTNOTE DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                footNoteTxt = dolResults.footNoteTxt = data.d.results[0].FOOTNOTE_TEXT;
+                                footNoteTxt = dolResults.footNoteTxt = data.d[0].FOOTNOTE_TEXT;
                         } catch (e) {
                             // console.log('Error parsing JSON');
                             reject('OE_FOOTNOTE FAILURE\n')
@@ -680,10 +678,6 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         });
     };
 
-    /*
-    .catch(function(e) { // Error-handling test start.
-        console.log("OE_AREA Failure");
-    })*/
     // Executing asynch functions.
     getOE_AREA().then(function(message) {
         console.log(message);
@@ -696,7 +690,10 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         return getOE_DATA_PUB(message);
     }).then(function(message) {
         console.log(message);
-        return getWageMetroArea(message);
+        // run function over all area codes inside of METROAREA for the mean salary of the specified occupation.
+        var actions = METROAREA.map(getWageMetroArea);
+        metroWageArray = Promise.all(actions); // pass array of promises into this array.
+        //return getWageMetroArea(areaCode);
     }).then(function(message) {
         console.log(message);
         return getFootNote(message);
