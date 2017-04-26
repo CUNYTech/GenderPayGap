@@ -314,10 +314,11 @@ app.get('/confirm', function(request, response) { // Fred - add referrer page re
 
 app.get('/dosurvey', function(request, response) { // Fred - add referrer page restriction to disable back button
     var surveyId;
-    if (request.session.surveyId)
+    if (request.session.surveyId) {
         surveyId = request.session.surveyId;
-    else
+    } else {
         return response.redirect(303, '/');
+    }
 
     Confirmed.findById(surveyId, function(err, user) {
         if (err) console.log(err);
@@ -336,10 +337,11 @@ app.get('/dosurvey', function(request, response) { // Fred - add referrer page r
 
 app.post('/prosurvey', function(request, response) { //this function processes the form data, it does not render a page
     var surveyId;
-    if (request.session.surveyId)
+    if (request.session.surveyId) {
         surveyId = request.session.surveyId;
-    else
+    } else {
         return response.redirect(303, '/');
+    }
 
     var passThru = true;
     var inpForm = {
@@ -349,6 +351,7 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         inpForm[params.getReqField(i)] = request.body[params.getReqField(i)];
         passThru = (request.body[params.getReqField(i)] != ""); // if required fields are empty, do not passThru
     }
+
     if (!passThru) { //if the required fields are not filled out, have the user redo the form
         request.session.inpForm = inpForm;
         request.session.alarm = true;
@@ -365,23 +368,22 @@ app.post('/prosurvey', function(request, response) { //this function processes t
         if (!user || !user.email) return response.redirect(303, '/');
         inpForm.email = user.email;
 
-
         for (var i = 1; i < params.getAllFieldsLen(); i++) { // start at index 1 since email (index 0) is already there.
             user[params.getAllFieldsMap(i)] = inpForm[params.getAllFieldsMap(i)];
-            // console.log(user[params.getAllFieldsMap(i)]);
         }
 
-        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state name
-        STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state code
-        console.log("the state code for: " + STATEVAR + " is: " + STATECODE);
-        METROAREA = params.getMetroArea(STATECODE); 
-        
-        for(var k = 0; k < METROAREA.length; k++){
-            console.log("this is in the metroarea array: " + METROAREA[k]);
+        STATEVAR = params.matchStateByAbb(user[params.getAllFieldsMap(6)]); //state abbreviation to state_name
+        STATECODE = params.getStateCode(user[params.getAllFieldsMap(6)]); //state abbreviation to state_code
+        METROAREA = params.getMetroArea(STATECODE);
+
+        console.log("List of all metro areas from from user survey: ");
+        for (var k = 0; k < METROAREA.length; k++) {
+            console.log(METROAREA[k]);
         }
+        console.log('\n');
 
         JOBTITLE = user[params.getAllFieldsMap(7)];
-        SALARY =  params.getSalaryValue(user[params.getAllFieldsMap(9)]);
+        SALARY = params.getSalaryValue(user[params.getAllFieldsMap(9)]);
 
         user.save(function(err) {
             if (err) throw (err);
@@ -389,13 +391,11 @@ app.post('/prosurvey', function(request, response) { //this function processes t
             if (request.session.alarm) delete request.session.alarm;
             response.redirect(303, '/shosurvey');
         });
+
     });
 });
 
 app.get('/shosurvey', function(request, response) { // add referrer page verification before entering page.
-    console.log("Values coming in from display_form ...");
-    console.log("State: " + STATEVAR);
-    console.log("Occupation: " + JOBTITLE);
 
     var dolResults = {
         areaCode: '',
@@ -428,19 +428,19 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        resolve('AREA CODE RETRIEVED');
+                        resolve('AREA CODE RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
                                 areaCode = dolResults.areaCode = data.d.results[0].AREA_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
 
                         } catch (e) {
-                            console.log('Error Parsing JSON');
-                            reject('OE_AREA FAILURE')
+                            console.log('Error Parsing JSON in OE_AREA');
+                            reject('OE_AREA FAILURE ' + 'Error Message: ' + e);
                         } finally {
-                            console.log('Area Code: ' + areaCode);
+                            console.log('Area Code --> ' + areaCode);
                         }
                     } else {
-                        reject('Failed to connect to: OE_AREA');
+                        reject('Failed to connect to: OE_AREA\n');
                     }
                 });
             });
@@ -471,18 +471,18 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        resolve('OCCUPATION NUMBER RETRIEVED');
+                        resolve('OCCUPATION NUMBER RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
                                 occupationNumber = dolResults.occupationNumber = data.d.results[0].OCCUPATION_CODE; //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
                         } catch (e) {
-                            console.log('Error Parsing JSON');
-                            reject('OE_OCCUPATION FAILURE')
+                            console.log('Error Parsing JSON in OE_OCCUPATION');
+                            reject('OE_OCCUPATION FAILURE ' + 'Error: ' + e);
                         } finally {
-                            console.log('Occupation Number: ' + occupationNumber);
+                            console.log('Occupation number --> ' + occupationNumber);
                         }
                     } else {
-                        reject('Failed to connect to: OE_OCCUPATION');
+                        reject('Failed to connect to: OE_OCCUPATION\n');
                     }
                 });
             });
@@ -495,7 +495,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_SERIES/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=(OCCUPATION_CODE eq " +
                 "'" + dolResults.occupationNumber + "'" + ") and (AREA_CODE eq " + "'" + dolResults.areaCode + "')",
                 encode = encodeURI(realmStatus);
-                console.log(realmStatus);
+
             var options = {
                 host: 'api.dol.gov',
                 path: encode,
@@ -513,21 +513,20 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        console.log('OK')
-                        resolve('OE_SERIES DATA RETRIEVED');
+                        resolve('OE_SERIES DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
-                                seriesIDannual = dolResults.seriesIDannual = data.d.results[3].SERIES_ID;
+                                seriesIDannual = dolResults.seriesIDannual = data.d.results[3].SERIES_ID,
                                 footNoteID = dolResults.footNoteID = data.d.results[3].FOOTNOTE_CODES;
-                                console.log('this is the ID # ' + seriesIDannual);
                         } catch (e) {
-                            console.log('Sorry, the Department of Labor provides such information about annual mean wage for your location');
-                            reject('OE_SERIES FAILURE');
+                            console.log('Sorry, Department Of Labor does not provide annual mean wage for ' + STATEVAR);
+                            reject('OE_SERIES FAILURE\n');
                         } finally {
-                            console.log('SERIES_ID: ' + seriesIDannual);
+                            console.log('series_id_no --> ' + seriesIDannual);
+                            console.log('footnote --> ' + footNoteID);
                         }
                     } else {
-                        reject('Failed to connect to: OE_SERIES');
+                        reject('Failed to connect to: OE_SERIES\n');
                     }
                 });
             });
@@ -557,18 +556,18 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        resolve('OE_DATA_PUB DATA RETRIEVED');
+                        resolve('OE_DATA_PUB DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
                                 annualMeanWage = dolResults.annualMeanWage = data.d.results[0].VALUE;
                         } catch (e) {
                             // console.log('Error parsing JSON');
-                            reject('OE_SERIES FAILURE')
+                            reject('OE_SERIES FAILURE\n')
                         } finally {
-                            console.log('This is the annual mean wage for ' + JOBTITLE + ': $' + annualMeanWage);
+                            console.log('Annual Mean Wage for (' + JOBTITLE + ') --> $' + annualMeanWage);
                         }
                     } else {
-                        reject('Failed to connect to: OE_DATA_PUB');
+                        reject('Failed to connect to: OE_DATA_PUB\n');
                     }
                 });
             });
@@ -576,51 +575,47 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
         }); // end of promise
     }; // end of OE_DATA_PUB
 
-    // let getWageMetroArea = function(){
-    //     return new Promise(function(resolve, reject){
-    //         for(var i = 0; i < METROAREA.length; i++){
-    //             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + METROAREA[i] + "000000" + dolResults.occupationNumber + "04'";
-    //             encode2.push(encodeURI(realmStatus));
-    //                     // console.log("iterator: " + i);
-    //                     // console.log("endpoint encoded: " + encode2[i]);
+    let getWageMetroArea = function(areaCode) {
+        return new Promise(function(resolve, reject) {
+            var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_DATA_PUB/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=SERIES_ID eq " + "'OEUM" + areaCode + "000000" + dolResults.occupationNumber + "04'";
+            encode2.push(encodeURI(realmStatus));
 
-    //             var options = {
-    //                     host: 'api.dol.gov',
-    //                     path: encode2[i],
-    //                     type: 'GET',
-    //                     dataType: 'json',
-    //                     headers: {'accept' : 'application/json'}
-    //             };
-    //             console.log("Start");
-    //             var x = http.request(options,function(res){
-    //                 console.log("Connected");
-    //                  var str = '';
-    //                 res.on('data', function(chunk) {
-    //                     str += chunk;
-    //                 });
-    //                 res.on('end',function(data){
-    //                    //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
-    //                      if(res.statusCode == 200){
-    //                         try{
-    //                             var data = JSON.parse(str);
-    //                             metroWageArray.push(data.d.results[0].VALUE); //fixed small bug here(for some reason, sometimes its data.d.result[0].AREA_CODE, sometimes its data.d[0].AREA_CODE);
-    //                             for(var j = 0; j < metroWageArray.length; j++){
-    //                                console.log(metroWageArray[j]);
-    //                             }
-    //                         }catch(e){
-    //                             //console.log('Error parsing JSON');
-    //                         }
-    //                     }
-    //                   // console.log(data.toString());
-    //                 });
-    //             });
-    //             x.end();
-    //             }//end for loop
-    //     }); //end promise
-    // }; //end getWageMetroArea
+            var options = {
+                host: 'api.dol.gov',
+                path: encode2[i],
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'accept': 'application/json'
+                }
+            };
 
-    let getFootNote = function(){
-        return new Promise(function(resolve, reject){
+            var metroArea = http.request(options, function(response) {
+                var str = '';
+                response.on('data', function(chunk) {
+                    str += chunk;
+                });
+                response.on('data', function(data) {
+                    //source: http://stackoverflow.com/questions/28503493/parsing-json-array-inside-a-json-object-in-node-js
+                    if (response.statusCode == 200) {
+                        try {
+                            var data = JSON.parse(str);
+                            // metroWageArray.push(data.d[0].VALUE);
+                            console.log("Mean Salary for area_code (" + areaCode + ") --> " + data.d.results[0].VALUE);
+                            Promise.resolve(data.d.results[0].VALUE); // Send in the metrowage here into the map.
+                        } catch (e) {
+                            //console.log('Error parsing JSON');
+                        }
+                    }
+                    // console.log(data.toString());
+                });
+            });
+            metroArea.end();
+        }); //end promise
+    }; //end getWageMetroArea
+
+    let getFootNote = function() {
+        return new Promise(function(resolve, reject) {
             var realmStatus = "http://api.dol.gov/V1/Statistics/OES/OE_FOOTNOTE/?KEY=1ce7650d-b131-4fb7-91b3-b7761efc8cd4&$filter=FOOTNOTE_CODE eq " + "'" + dolResults.footNoteID + "'",
                 encode = encodeURI(realmStatus);
 
@@ -633,7 +628,7 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                     'accept': 'application/json'
                 }
             };
-            var oeFN = http.request(options, function(response) {
+            var oeFOOTNOTE = http.request(options, function(response) {
 
                 var str = '';
                 response.on('data', function(chunk) {
@@ -641,29 +636,27 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 });
                 response.on('end', function(data) {
                     if (response.statusCode == 200) {
-                        resolve('OE_FOOTNOTE DATA RETRIEVED');
+                        resolve('OE_FOOTNOTE DATA RETRIEVED\n');
                         try {
                             var data = JSON.parse(str),
                                 footNoteTxt = dolResults.footNoteTxt = data.d.results[0].FOOTNOTE_TEXT;
                         } catch (e) {
                             // console.log('Error parsing JSON');
-                            reject('OE_FOOTNOTE FAILURE')
-                        } finally {
-                            console.log('This is the footnote: ' +  footNoteTxt);
+                            reject('OE_FOOTNOTE FAILURE\n')
                         }
                     } else {
-                        reject('Failed to connect to: OE_FOOTNOTE');
+                        reject('Failed to connect to: OE_FOOTNOTE\n');
                     }
                 });
             });
-            oeFN.end();
-        }); //end promise
-    }; //end oeFN
+            oeFOOTNOTE.end();
+        }); // end promise
+    }; // end oeFN
 
-    let showValues = function(){
-        return new Promise(function(resolve,reject){
+    let showValues = function() {
+        return new Promise(function(resolve, reject) {
             if (!request.session.dispForm) {
-            response.redirect(303, '/');
+                response.redirect(303, '/');
             }
             var dispForm = params.getResDisp(request.session.dispForm); //transform form input into layout for display-translate param codes
             //var meanWage = dolResults.annualMeanWage;
@@ -676,6 +669,12 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
                 footnote: dolResults.footNoteTxt,
                 metro: METROAREA
             });
+
+            console.log("\nAREA_CODE " + '\t' + "Mean Value (Salary)");
+            console.log("Total Metro Wages --> " + metroWageArray.length);
+            for (var j = 0; j < metroWageArray.length; j++) {
+                console.log(METROAREA[j] + ' --> ' + ' $' + metroWageArray[j]);
+            }
         });
     };
 
@@ -689,10 +688,16 @@ app.get('/shosurvey', function(request, response) { // add referrer page verific
     }).then(function(message) {
         console.log(message);
         return getOE_DATA_PUB(message);
-    }).then(function(message){
+    }).then(function(message) {
+        console.log(message);
+        // run function over all area codes inside of METROAREA for the mean salary of the specified occupation.
+        var actions = METROAREA.map(getWageMetroArea);
+        metroWageArray = Promise.all(actions); // pass array of promises into this array.
+        //return getWageMetroArea(areaCode);
+    }).then(function(message) {
         console.log(message);
         return getFootNote(message);
-    }).then(function(message){
+    }).then(function(message) {
         console.log('MULTI-GET REQUEST COMPLETE');
         return showValues(message);
     })
