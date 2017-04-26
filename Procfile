@@ -1,1 +1,1 @@
-web: node gpgmains
+web: node gpgmain
