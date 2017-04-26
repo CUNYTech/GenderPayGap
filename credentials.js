@@ -1,5 +1,5 @@
 module.exports = {
-	cookieSecret: 'pw',
+	cookieSecret: process.env.COOKIE_SECRET,
 	mongoUrl: process.env.MONGO_URI,
 	secretKey: process.env.MONGO_SECRET_KEY,
 	mongo: {
@@ -14,4 +14,5 @@ module.exports = {
 		provider: 'Gmail',
 		user: process.env.GMAIL_USER,
 		password: process.env.GMAIL_PASS,
+	},
 }
